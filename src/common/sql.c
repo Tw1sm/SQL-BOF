@@ -2,6 +2,9 @@
 #include <sql.h>
 #include "bofdefs.h"
 
+//
+// prints a SQL error message
+//
 void ShowError(unsigned int handletype, const SQLHANDLE* handle) {
     SQLCHAR sqlstate[1024];
     SQLCHAR message[1024];
@@ -9,6 +12,9 @@ void ShowError(unsigned int handletype, const SQLHANDLE* handle) {
         internal_printf("Message: %s \nSQL State: %s\n", message, sqlstate);
 }
 
+//
+// executes a query
+//
 void ExecuteQuery(SQLHSTMT stmt, SQLCHAR* query) {
     SQLRETURN ret;
 
@@ -19,6 +25,9 @@ void ExecuteQuery(SQLHSTMT stmt, SQLCHAR* query) {
     }
 }
 
+//
+// returns an array of results (1st column only)
+//
 char** GetMultipleResults(SQLHSTMT stmt, BOOL hasHeader) {
     char** results = (char**)MSVCRT$malloc(1024 * sizeof(char*));
     SQLCHAR buf[1024];
@@ -39,6 +48,9 @@ char** GetMultipleResults(SQLHSTMT stmt, BOOL hasHeader) {
     return results;
 }
 
+//
+// returns a single result (1st column/1st row only)
+//
 char* GetSingleResult(SQLHSTMT stmt, BOOL hasHeader) {
     SQLCHAR* buf = (SQLCHAR*)MSVCRT$malloc(1024 * sizeof(SQLCHAR));
     SQLLEN indicator;
@@ -51,6 +63,9 @@ char* GetSingleResult(SQLHSTMT stmt, BOOL hasHeader) {
     return (char*)buf;
 }
 
+//
+// prints the results of a query
+//
 void PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader) {
     SQLSMALLINT columns;
     SQLRETURN ret;
@@ -99,23 +114,30 @@ void PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader) {
     }
 }
 
+//
+// connects to a SQL server
+//
 SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName) {
     SQLRETURN ret;
     SQLCHAR connstr[1024];
     SQLHDBC dbc = NULL;
 
-    // Allocate an environment handle
+    //
+    // Allocate an environment handle and set ODBC version
+    //
     ret = ODBC32$SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, env);
-
-    // Set environment attribute
     ret = ODBC32$SQLSetEnvAttr(*env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC3, 0);
 
+    //
     // Allocate a connection handle
+    //
     ret = ODBC32$SQLAllocHandle(SQL_HANDLE_DBC, *env, &dbc);
     
     MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;DATABASE=%s;Trusted_Connection=Yes;", server, dbName);
 
-    /* Connect to the database */
+    //
+    // connect to the sql server
+    //
     internal_printf("[*] Connecting to %s:1433\n", server);
     ret = ODBC32$SQLDriverConnect(dbc, NULL, connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_COMPLETE);
     if (SQL_SUCCEEDED(ret)) {
@@ -129,7 +151,9 @@ SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName) {
     return dbc;
 }
 
-
+//
+// closes the connection to a SQL server
+//
 void DisconnectSqlServer(SQLHENV env, SQLHDBC dbc, SQLHSTMT stmt) {
 	internal_printf("\n[*] Disconnecting from server\n");
 

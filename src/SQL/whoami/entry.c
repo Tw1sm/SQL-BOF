@@ -12,11 +12,13 @@ void PrintMemberStatus(char* roleName, char* status) {
 	}
 }
 
-void Whoami() {
-    SQLHENV env = NULL;
-    SQLHSTMT stmt = NULL;
+void Whoami(char* server, char* database) {
+    SQLHENV env		= NULL;
+    SQLHSTMT stmt 	= NULL;
 
-	/*  define the default roles well check membership for  */
+	//
+	// default server roles
+	//
 	char* roles[] = { 
 		"sysadmin",
 		"setupadmin", 
@@ -28,15 +30,12 @@ void Whoami() {
 		"bulkadmin"
 	};
 	
-	/*  query output vars  */
-	char* sysUser = NULL;
-	char* mappedUser = NULL;
-	char** dbRoles = NULL;
 	
-    char* server = "oxenfurt.redania.local";
-    char* dbName = "master";
+	char* sysUser 		= NULL;
+	char* mappedUser 	= NULL;
+	char** dbRoles 		= NULL;
 
-    SQLHDBC dbc = ConnectToSqlServer(&env, server, dbName);
+    SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
 
     if (dbc == NULL) {
 		goto END;
@@ -44,37 +43,53 @@ void Whoami() {
 
 	internal_printf("[*] Determining user permissions on %s\n", server);
 
-	/*  Allocate a statement handle  */
+	//
+	// allocate statement handle
+	//
 	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 
-	/*  first query  */
+	//
+	// first query
+	//
 	SQLCHAR* query = (SQLCHAR*)"SELECT SYSTEM_USER;";
 	ExecuteQuery(stmt, query);
 	sysUser = GetSingleResult(stmt, FALSE);
 	internal_printf("[*] Logged in as %s\n", sysUser);
 
-	/*  Close the cursor  */
+	//
+	// close the cursor
+	//
 	ODBC32$SQLCloseCursor(stmt);
 
-	/*  second query  */
+	//
+	// second query
+	//
 	query = (SQLCHAR*)"SELECT USER_NAME();";
 	ExecuteQuery(stmt, query);
 	mappedUser = GetSingleResult(stmt, FALSE);
 	internal_printf("[*] Mapped to the user %s\n", mappedUser);
 
-	/*  Close the cursor  */
+	//
+	// close the cursor
+	//
 	ODBC32$SQLCloseCursor(stmt);
 
-	/*  third query  */
+	//
+	// third query
+	//
 	internal_printf("[*] Gathering roles...\n");
 	query = (SQLCHAR*)"SELECT [name] from sysusers where issqlrole = 1;";
 	ExecuteQuery(stmt, query);
 	dbRoles = GetMultipleResults(stmt, FALSE);
 	
-	/*  Close the cursor  */
+	//
+	// close the cursor
+	//
 	ODBC32$SQLCloseCursor(stmt);
 	
-	/*  fifth query (loop)  */
+	//
+	// fourth query (loop)
+	//
 	for (int i = 0; dbRoles[i] != NULL; i++) {
 		char* role = dbRoles[i];
 		char query[1024];
@@ -84,8 +99,9 @@ void Whoami() {
 		ODBC32$SQLCloseCursor(stmt);
 	}
 	
-
-	/*  fifth query (loop)  */
+	//
+	// fifth query (loop)
+	//
 	for (int i = 0; i < sizeof(roles) / sizeof(roles[0]); i++) {
 		char* role = roles[i];
 		char query[1024];
@@ -106,12 +122,31 @@ VOID go(
 	IN ULONG Length 
 ) 
 {
+	char* server 	= NULL;
+	char* database 	= NULL;
+
+	//
+	// parse beacon args 
+	//
+	datap parser;
+	BeaconDataParse(&parser, Buffer, Length);
+	server = BeaconDataExtract(&parser, NULL);
+	database = BeaconDataExtract(&parser, NULL);
+
+	if (database == NULL) {
+		database = "master";
+	}
+
+	if (server == NULL) {
+		server = "localhost";
+	}
+
 	if(!bofstart())
 	{
 		return;
 	}
 	
-	Whoami();
+	Whoami(server, database);
 
 	printoutput(TRUE);
 };
@@ -120,7 +155,7 @@ VOID go(
 
 int main()
 {
-	Whoami();
+	Whoami("192.168.0.215", "master");
 }
 
 #endif
