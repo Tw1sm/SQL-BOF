@@ -80,19 +80,21 @@ void PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader) {
     SQLCHAR buffer[1024];
     SQLSMALLINT columnNameLength, dataType, decimalDigits, nullable;
     SQLULEN columnSize;
+    int totalLength = 0;
 
     // Print column headers
     if (hasHeader) {
         for (SQLSMALLINT i = 1; i <= columns; i++) {
             ODBC32$SQLDescribeCol(stmt, i, buffer, sizeof(buffer), &columnNameLength, &dataType, &columnSize, &decimalDigits, &nullable);
-            internal_printf("%s\t", buffer);
+            internal_printf("%s | ", buffer);
+            totalLength += columnNameLength + 3;
         }
     }
 
     if (hasHeader) {
         internal_printf("\n");
-        for (SQLSMALLINT i = 1; i <= columns; i++) {
-            internal_printf("--------");
+        for (int i = 0; i < totalLength; i++) {
+            internal_printf("-");
         }
         internal_printf("\n");
     }
@@ -107,7 +109,7 @@ void PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader) {
             if (SQL_SUCCEEDED(ret)) {
                 // Print column data
                 if (indicator == SQL_NULL_DATA) MSVCRT$strcpy((char*)buffer, "NULL");
-                internal_printf("%s\t", buffer);
+                internal_printf("%s | ", buffer);
             }
         }
         internal_printf("\n");
