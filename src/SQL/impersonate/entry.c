@@ -4,14 +4,16 @@
 #include "sql.c"
 
 
-void CheckImpersonate(char* server, char* database) {
+void CheckImpersonate(char* server, char* database)
+{
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
 
 
     SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
 
-    if (dbc == NULL) {
+    if (dbc == NULL) 
+	{
 		goto END;
 	}
 
@@ -28,7 +30,10 @@ void CheckImpersonate(char* server, char* database) {
 	SQLCHAR* query = (SQLCHAR*)"SELECT distinct b.name FROM sys.server_permissions a "
             		"INNER JOIN sys.server_principals b ON a.grantor_principal_id "
             		"= b.principal_id WHERE a.permission_name = 'IMPERSONATE';";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	PrintQueryResults(stmt, TRUE);
 
 	//
@@ -55,16 +60,12 @@ VOID go(
 	//
 	datap parser;
 	BeaconDataParse(&parser, Buffer, Length);
-	server = BeaconDataExtract(&parser, NULL);
-	database = BeaconDataExtract(&parser, NULL);
 
-	if (database == NULL) {
-		database = "master";
-	}
+	server 		= BeaconDataExtract(&parser, NULL);
+	database 	= BeaconDataExtract(&parser, NULL);
 
-	if (server == NULL) {
-		server = "localhost";
-	}
+	server = *server == 0 ? "localhost" : server;
+	database = *database == 0 ? "master" : database;
 
 	if(!bofstart())
 	{

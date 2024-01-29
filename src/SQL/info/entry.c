@@ -33,7 +33,8 @@ void GetSQLInfo(char* server, char* database) {
 	
     SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
 
-    if (dbc == NULL) {
+    if (dbc == NULL)
+	{
 		goto END;
 	}
 
@@ -48,10 +49,16 @@ void GetSQLInfo(char* server, char* database) {
 	// first query - IsSysAdmin
 	//
 	SQLCHAR* query = (SQLCHAR*)"SELECT IS_SRVROLEMEMBER('sysadmin');";
-	ExecuteQuery(stmt, query);
-	if (GetSingleResult(stmt, FALSE)[0] == '1') {
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
+	if (GetSingleResult(stmt, FALSE)[0] == '1')
+	{
 		info.IsSysAdmin = TRUE;
-	} else {
+	}
+	else
+	{
 		info.IsSysAdmin = FALSE;
 	}
 	ODBC32$SQLCloseCursor(stmt);
@@ -60,7 +67,10 @@ void GetSQLInfo(char* server, char* database) {
 	// second query - DomainName
 	//
 	query = (SQLCHAR*)"SELECT @@SERVERNAME;";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.ComputerName = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -68,7 +78,10 @@ void GetSQLInfo(char* server, char* database) {
 	// third query - DomainName
 	//
 	query = (SQLCHAR*)"SELECT default_domain();";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.DomainName = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -76,7 +89,10 @@ void GetSQLInfo(char* server, char* database) {
 	// fourth query - ServicePid
 	//
 	query = (SQLCHAR*)"SELECT CONVERT(VARCHAR(255), SERVERPROPERTY('processid'));";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.ServicePid = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -96,7 +112,10 @@ void GetSQLInfo(char* server, char* database) {
             "set @SQLServerServiceName = 'MSSQL$'+cast(@@SERVICENAME as varchar(250))\n"
             "END\n"
             "SELECT @SQLServerServiceName;";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.ServiceName = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -117,7 +136,10 @@ void GetSQLInfo(char* server, char* database) {
             "N'HKEY_LOCAL_MACHINE', @SQLServerInstance,\n"
             "N'ObjectName',@ServiceAccountName OUTPUT, N'no_output'\n"
             "SELECT @ServiceAccountName;";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.ServiceAccount = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -133,7 +155,10 @@ void GetSQLInfo(char* server, char* database) {
             "WHEN 2 THEN 'Windows and SQL Server Authentication'\n"
             "ELSE 'Unknown'\n"
             "END);";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.AuthenticationMode = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -149,7 +174,10 @@ void GetSQLInfo(char* server, char* database) {
             "BEGIN CATCH	            \n"
             "END CATCH\n"
             "SELECT @ForcedEncryption;";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.ForcedEncryption = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -161,7 +189,10 @@ void GetSQLInfo(char* server, char* database) {
             "THEN 'No'\n"
             "ELSE 'Yes'\n"
             "END";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.Clustered = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -169,7 +200,10 @@ void GetSQLInfo(char* server, char* database) {
 	// 10th query - SqlServerVesionNumber
 	//
 	query = (SQLCHAR*)"SELECT CONVERT(VARCHAR(255), SERVERPROPERTY('productversion'));";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.SqlServerVersionNumber = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -177,7 +211,10 @@ void GetSQLInfo(char* server, char* database) {
 	// 11th query - SqlServerMajorVersion
 	//
 	query = (SQLCHAR*)"SELECT SUBSTRING(@@VERSION, CHARINDEX('2', @@VERSION), 4);";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.SqlServerMajorVersion = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -185,7 +222,10 @@ void GetSQLInfo(char* server, char* database) {
 	// 12th query - SqlServerEdition
 	//
 	query = (SQLCHAR*)"SELECT CONVERT(VARCHAR(255), SERVERPROPERTY('Edition'));";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.SqlServerEdition = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -193,7 +233,10 @@ void GetSQLInfo(char* server, char* database) {
 	// 12th query - SqlServerServicePack
 	//
 	query = (SQLCHAR*)"SELECT CONVERT(VARCHAR(255), SERVERPROPERTY('ProductLevel'));";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.SqlServerServicePack = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -201,14 +244,18 @@ void GetSQLInfo(char* server, char* database) {
 	// 13th query - OsArchitecture
 	//
 	query = (SQLCHAR*)"SELECT SUBSTRING(@@VERSION, CHARINDEX('x', @@VERSION), 3);";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.OsArchitecture = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
 	//
 	// 14th query - OsMachineType
 	//
-	if (info.IsSysAdmin) {
+	if (info.IsSysAdmin)
+	{
 		query = (SQLCHAR*)"DECLARE @MachineType  SYSNAME\n"
                 "EXECUTE master.dbo.xp_regread\n"
                 "@rootkey		= N'HKEY_LOCAL_MACHINE',\n"
@@ -216,7 +263,10 @@ void GetSQLInfo(char* server, char* database) {
                 "@value_name	= N'ProductType',\n"
                 "@value			= @MachineType output\n"
                 "SELECT @MachineType;";
-		ExecuteQuery(stmt, query);
+		if (!ExecuteQuery(stmt, query))
+		{
+			goto END;
+		}
 		info.OsMachineType = GetSingleResult(stmt, FALSE);
 		ODBC32$SQLCloseCursor(stmt);
 	}
@@ -224,7 +274,8 @@ void GetSQLInfo(char* server, char* database) {
 	//
 	// 15th query - OsVersion
 	//
-	if (info.IsSysAdmin) {
+	if (info.IsSysAdmin)
+	{
 		query = (SQLCHAR*)"DECLARE @ProductName  SYSNAME\n"
                 "EXECUTE master.dbo.xp_regread\n"
                 "@rootkey		= N'HKEY_LOCAL_MACHINE',\n"
@@ -232,7 +283,10 @@ void GetSQLInfo(char* server, char* database) {
                 "@value_name	= N'ProductName',\n"
                 "@value			= @ProductName output\n"
                 "SELECT @ProductName;";
-		ExecuteQuery(stmt, query);
+		if (!ExecuteQuery(stmt, query))
+		{
+			goto END;
+		}
 		info.OsVersion = GetSingleResult(stmt, FALSE);
 		ODBC32$SQLCloseCursor(stmt);
 	}
@@ -241,7 +295,10 @@ void GetSQLInfo(char* server, char* database) {
 	// 16th query - OsVersionNumber
 	//
 	query = (SQLCHAR*)"SELECT RIGHT(SUBSTRING(@@VERSION, CHARINDEX('Windows Server', @@VERSION), 19), 4);";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.OsVersionNumber = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -249,7 +306,10 @@ void GetSQLInfo(char* server, char* database) {
 	// 17th query - CurrentLogin
 	//
 	query = (SQLCHAR*)"SELECT SYSTEM_USER;";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.CurrentLogin = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -257,7 +317,10 @@ void GetSQLInfo(char* server, char* database) {
 	// 18th query - ActiveSessions
 	//
 	query = (SQLCHAR*)"SELECT COUNT(*) FROM [sys].[dm_exec_sessions] WHERE status = 'running';";
-	ExecuteQuery(stmt, query);
+	if (!ExecuteQuery(stmt, query))
+	{
+		goto END;
+	}
 	info.ActiveSessions = GetSingleResult(stmt, FALSE);
 	ODBC32$SQLCloseCursor(stmt);
 
@@ -280,7 +343,8 @@ void GetSQLInfo(char* server, char* database) {
 	internal_printf("%-30s: %s\n", " |--> SqlServerServicePack", info.SqlServerServicePack);
 	internal_printf("%-30s: %s\n", " |--> OsArchitecture", info.OsArchitecture);
 
-	if (info.IsSysAdmin) {
+	if (info.IsSysAdmin)
+	{
 		internal_printf("%-30s: %s\n", " |--> OsMachineType", info.OsMachineType);
 		internal_printf("%-30s: %s\n", " |--> OsVersion", info.OsVersion);
 	}
@@ -312,13 +376,8 @@ VOID go(
 	server = BeaconDataExtract(&parser, NULL);
 	database = BeaconDataExtract(&parser, NULL);
 
-	if (database == NULL) {
-		database = "master";
-	}
-
-	if (server == NULL) {
-		server = "localhost";
-	}
+	server = *server == 0 ? "localhost" : server;
+	database = *database == 0 ? "master" : database;
 
 	if(!bofstart())
 	{

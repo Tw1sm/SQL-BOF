@@ -3,7 +3,8 @@
 #include "base.c"
 #include "sql.c"
 
-void PrintMemberStatus(char* roleName, char* status) {
+void PrintMemberStatus(char* roleName, char* status)
+{
 	if (status[0] == '0') {
 		internal_printf(" |--> User is NOT a member of the %s role\n", roleName);
 	}
@@ -12,7 +13,8 @@ void PrintMemberStatus(char* roleName, char* status) {
 	}
 }
 
-void Whoami(char* server, char* database) {
+void Whoami(char* server, char* database, char* link, char* impersonate)
+{
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
 
@@ -37,11 +39,20 @@ void Whoami(char* server, char* database) {
 
     SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
 
-    if (dbc == NULL) {
+    if (dbc == NULL)
+	{
 		goto END;
 	}
 
-	internal_printf("[*] Determining user permissions on %s\n", server);
+	if (link == NULL)
+	{
+		internal_printf("[*] Determining user permissions on %s\n", server);
+	}
+	else
+	{
+		internal_printf("[*] Determining user permissions on %s via %s\n", link, server);
+	}
+	
 
 	//
 	// allocate statement handle
@@ -52,7 +63,10 @@ void Whoami(char* server, char* database) {
 	// first query
 	//
 	SQLCHAR* query = (SQLCHAR*)"SELECT SYSTEM_USER;";
-	ExecuteQuery(stmt, query);
+	if (!HandleQuery(stmt, query, link, impersonate))
+	{
+		goto END;
+	}
 	sysUser = GetSingleResult(stmt, FALSE);
 	internal_printf("[*] Logged in as %s\n", sysUser);
 
@@ -65,7 +79,10 @@ void Whoami(char* server, char* database) {
 	// second query
 	//
 	query = (SQLCHAR*)"SELECT USER_NAME();";
-	ExecuteQuery(stmt, query);
+	if (!HandleQuery(stmt, query, link, impersonate))
+	{
+		goto END;
+	}
 	mappedUser = GetSingleResult(stmt, FALSE);
 	internal_printf("[*] Mapped to the user %s\n", mappedUser);
 
@@ -79,7 +96,10 @@ void Whoami(char* server, char* database) {
 	//
 	internal_printf("[*] Gathering roles...\n");
 	query = (SQLCHAR*)"SELECT [name] from sysusers where issqlrole = 1;";
-	ExecuteQuery(stmt, query);
+	if (!HandleQuery(stmt, query, link, impersonate))
+	{
+		goto END;
+	}
 	dbRoles = GetMultipleResults(stmt, FALSE);
 	
 	//
@@ -90,11 +110,15 @@ void Whoami(char* server, char* database) {
 	//
 	// fourth query (loop)
 	//
-	for (int i = 0; dbRoles[i] != NULL; i++) {
+	for (int i = 0; dbRoles[i] != NULL; i++)
+	{
 		char* role = dbRoles[i];
 		char query[1024];
 		MSVCRT$sprintf(query, "SELECT IS_MEMBER('%s');", role);
-		ExecuteQuery(stmt, query);
+		if (!HandleQuery(stmt, query, link, impersonate))
+		{
+			goto END;
+		}
 		PrintMemberStatus(role, GetSingleResult(stmt, FALSE));
 		ODBC32$SQLCloseCursor(stmt);
 	}
@@ -102,11 +126,15 @@ void Whoami(char* server, char* database) {
 	//
 	// fifth query (loop)
 	//
-	for (int i = 0; i < sizeof(roles) / sizeof(roles[0]); i++) {
+	for (int i = 0; i < sizeof(roles) / sizeof(roles[0]); i++)
+	{
 		char* role = roles[i];
 		char query[1024];
 		MSVCRT$sprintf(query, "SELECT IS_SRVROLEMEMBER('%s');", role);
-		ExecuteQuery(stmt, query);
+		if (!HandleQuery(stmt, query, link, impersonate))
+		{
+			goto END;
+		}
 		PrintMemberStatus(role, GetSingleResult(stmt, FALSE));
 		ODBC32$SQLCloseCursor(stmt);
 	}
@@ -122,31 +150,41 @@ VOID go(
 	IN ULONG Length 
 ) 
 {
-	char* server 	= NULL;
-	char* database 	= NULL;
+	//
+	// usage: whoami <server> <database> <link> <impersonate>
+	//
+	char* server;
+	char* database;
+	char* link;
+	char* impersonate;
 
 	//
 	// parse beacon args 
 	//
 	datap parser;
 	BeaconDataParse(&parser, Buffer, Length);
-	server = BeaconDataExtract(&parser, NULL);
-	database = BeaconDataExtract(&parser, NULL);
 
-	if (database == NULL) {
-		database = "master";
-	}
-
-	if (server == NULL) {
-		server = "localhost";
-	}
+	server 		= BeaconDataExtract(&parser, NULL);
+	database 	= BeaconDataExtract(&parser, NULL);
+	link 		= BeaconDataExtract(&parser, NULL);
+	impersonate = BeaconDataExtract(&parser, NULL);
+	
+	server = *server == 0 ? "localhost" : server;
+	database = *database == 0 ? "master" : database;
+	link = *link  == 0 ? NULL : link;
+	impersonate = *impersonate == 0 ?  NULL : impersonate;
 
 	if(!bofstart())
 	{
 		return;
 	}
-	
-	Whoami(server, database);
+
+	if (UsingLinkAndImpersonate(link, impersonate))
+	{
+		return;
+	}
+
+	Whoami(server, database, link, impersonate);
 
 	printoutput(TRUE);
 };
@@ -155,7 +193,7 @@ VOID go(
 
 int main()
 {
-	Whoami("192.168.0.215", "master");
+	Whoami("192.168.0.215", "master", NULL, NULL);
 }
 
 #endif

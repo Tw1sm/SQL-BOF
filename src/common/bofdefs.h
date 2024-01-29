@@ -34,6 +34,8 @@ WINBASEAPI void *__cdecl MSVCRT$calloc(size_t _NumOfElements, size_t _SizeOfElem
 WINBASEAPI void __cdecl MSVCRT$free(void *_Memory);
 WINBASEAPI void* WINAPI MSVCRT$malloc(SIZE_T);
 WINBASEAPI int __cdecl MSVCRT$sprintf(char *__stream, const char *__format, ...);
+DECLSPEC_IMPORT char * __cdecl MSVCRT$strcat(char * __restrict__ _Dest,const char * __restrict__ _Source);
+DECLSPEC_IMPORT int __cdecl MSVCRT$strcmp(const char *_Str1,const char *_Str2);
 WINBASEAPI size_t __cdecl MSVCRT$strlen(const char *_Str);
 WINBASEAPI int __cdecl MSVCRT$vsnprintf(char * __restrict__ d,size_t n,const char * __restrict__ format,va_list arg);
 DECLSPEC_IMPORT char * __cdecl MSVCRT$strcpy(char * __restrict__ __dst, const char * __restrict__ __src);
@@ -72,6 +74,8 @@ WINBASEAPI SQLRETURN ODBC32$SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER 
 #define MSVCRT$free free
 #define MSVCRT$malloc malloc
 #define MSVCRT$sprintf sprintf
+#define MSVCRT$strcat strcat
+#define MSVCRT$strcmp strcmp
 #define MSVCRT$strlen strlen
 #define MSVCRT$vsnprintf vsnprintf
 #define MSVCRT$strcpy strcpy
