@@ -38,6 +38,33 @@ BOOL ExecuteQuery(SQLHSTMT stmt, SQLCHAR* query)
 //
 BOOL ExecuteLQuery(SQLHSTMT stmt, SQLCHAR* query, char* link)
 {
+    //
+    // Replace single quotes with double single quotes
+    //
+    int count = 0;
+    char* ptr = (char*)query;
+    while (*ptr) {
+        if (*ptr == '\'') {
+            count++;
+        }
+        ptr++;
+    }
+
+    char* editedQuery = (char*)MSVCRT$malloc((MSVCRT$strlen((char*)query) + count + 1) * sizeof(char));
+    char* newPtr = editedQuery;
+    ptr = (char*)query;
+
+    while (*ptr) {
+        if (*ptr == '\'') {
+            *newPtr++ = '\'';
+            *newPtr++ = '\'';
+        } else {
+            *newPtr++ = *ptr;
+        }
+        ptr++;
+    }
+    *newPtr = '\0';
+
     char* linkPrefix = "SELECT * FROM OPENQUERY(\"";
     char* linksuffix = "\", '";
     char* querySuffix = "')";
@@ -47,7 +74,7 @@ BOOL ExecuteLQuery(SQLHSTMT stmt, SQLCHAR* query, char* link)
     MSVCRT$strcpy(lQuery, linkPrefix);
     MSVCRT$strcat(lQuery, link);
     MSVCRT$strcat(lQuery, linksuffix);
-    MSVCRT$strcat(lQuery, (char*)query);
+    MSVCRT$strcat(lQuery, (char*)editedQuery);
     MSVCRT$strcat(lQuery, querySuffix);
 
     return ExecuteQuery(stmt, (SQLCHAR*)lQuery);
