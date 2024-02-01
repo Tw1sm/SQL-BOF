@@ -8,9 +8,17 @@ void CheckUsers(char* server, char* database, char* link, char* impersonate)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
+	SQLHDBC dbc 	= NULL;
 
 
-    SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
+    if (link == NULL)
+	{
+		dbc = ConnectToSqlServer(&env, server, database);
+	}
+	else
+	{
+		dbc = ConnectToSqlServer(&env, server, NULL);
+	}
 
     if (dbc == NULL) {
 		goto END;
@@ -49,7 +57,7 @@ void CheckUsers(char* server, char* database, char* link, char* impersonate)
 	//
 	// Run the query
 	//
-	if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate)){
+	if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE)){
 		goto END;
 	}
 	PrintQueryResults(stmt, TRUE);

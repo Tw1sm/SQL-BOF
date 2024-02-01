@@ -4,14 +4,13 @@
 #include "sql.c"
 
 
-void CheckLinks(char* server, char* database, char* link, char* impersonate)
+void CheckTables(char* server, char* database, char* link, char* impersonate)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
 	SQLHDBC dbc 	= NULL;
 
-
-    if (link == NULL)
+	if (link == NULL)
 	{
 		dbc = ConnectToSqlServer(&env, server, database);
 	}
@@ -19,6 +18,7 @@ void CheckLinks(char* server, char* database, char* link, char* impersonate)
 	{
 		dbc = ConnectToSqlServer(&env, server, NULL);
 	}
+    
 
     if (dbc == NULL) {
 		goto END;
@@ -26,11 +26,11 @@ void CheckLinks(char* server, char* database, char* link, char* impersonate)
 
 	if (link == NULL)
 	{
-		internal_printf("[*] Enumerating linked servers on %s\n\n", server);
+		internal_printf("[*] Enumerating tables in the %s database on %s\n\n", database, server);
 	}
 	else
 	{
-		internal_printf("[*] Enumerating linked servers on %s via %s\n\n", link, server);
+		internal_printf("[*] Enumerating tables in the %s database on %s via %s\n\n", database, link, server);
 	}
 	
 
@@ -40,10 +40,21 @@ void CheckLinks(char* server, char* database, char* link, char* impersonate)
 	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 
 	//
+	// Construct query
+	//
+	char* prefix = "SELECT * FROM ";
+	char* suffix = ".INFORMATION_SCHEMA.TABLES;";
+	
+	char* query = (char*)intAlloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(database) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+	
+	MSVCRT$strcpy(query, prefix);
+	MSVCRT$strcat(query, database);
+	MSVCRT$strcat(query, suffix);
+
+	//
 	// Run the query
 	//
-	SQLCHAR* query = (SQLCHAR*)"SELECT name, product, provider, data_source FROM sys.servers WHERE is_linked = 1;";
-	if (!HandleQuery(stmt, query, link, impersonate, FALSE)){
+	if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE)){
 		goto END;
 	}
 	PrintQueryResults(stmt, TRUE);
@@ -95,7 +106,7 @@ VOID go(
 		return;
 	}
 	
-	CheckLinks(server, database, link, impersonate);
+	CheckTables(server, database, link, impersonate);
 
 	printoutput(TRUE);
 };
@@ -104,7 +115,7 @@ VOID go(
 
 int main()
 {
-	CheckLinks("192.168.0.215", "master", NULL, NULL);
+	CheckTables("192.168.0.215", "master", NULL, NULL);
 }
 
 #endif

@@ -2,6 +2,7 @@
 #include <sql.h>
 #include "bofdefs.h"
 
+
 //
 // prints a SQL error message
 //
@@ -31,6 +32,53 @@ BOOL ExecuteQuery(SQLHSTMT stmt, SQLCHAR* query)
     }
 
     return TRUE;
+}
+
+//
+//
+//
+BOOL ExecuteLQueryRpc(SQLHSTMT stmt, SQLCHAR* query, char* link)
+{
+    //
+    // Replace single quotes with double single quotes
+    //
+    int count = 0;
+    char* ptr = (char*)query;
+    while (*ptr) {
+        if (*ptr == '\'') {
+            count++;
+        }
+        ptr++;
+    }
+
+    char* editedQuery = (char*)MSVCRT$malloc((MSVCRT$strlen((char*)query) + count + 1) * sizeof(char));
+    char* newPtr = editedQuery;
+    ptr = (char*)query;
+
+    while (*ptr) {
+        if (*ptr == '\'') {
+            *newPtr++ = '\'';
+            *newPtr++ = '\'';
+        } else {
+            *newPtr++ = *ptr;
+        }
+        ptr++;
+    }
+    *newPtr = '\0';
+
+    char* prefix = "EXECUTE ('";
+    char* suffix = "') AT ";
+    char* querySuffix = ";";
+
+    // append prefix, query, suffix, link, querySuffix
+    char* lQuery = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen((char*)query) + MSVCRT$strlen(suffix) + MSVCRT$strlen(link) + MSVCRT$strlen(querySuffix) + 1) * sizeof(char));
+    MSVCRT$strcpy(lQuery, prefix);
+    MSVCRT$strcat(lQuery, (char*)editedQuery);
+    MSVCRT$strcat(lQuery, suffix);
+    MSVCRT$strcat(lQuery, link);
+    MSVCRT$strcat(lQuery, querySuffix);
+
+    return ExecuteQuery(stmt, (SQLCHAR*)lQuery);
 }
 
 //
@@ -102,11 +150,18 @@ BOOL ExecuteIQuery(SQLHSTMT stmt, SQLCHAR* query, char* impersonate)
 // Main query handler to detemine if running standard, linked, or impersonated query
 // (for BOFs that support more than just standard queries)
 //
-BOOL HandleQuery(SQLHSTMT stmt, SQLCHAR* query, char* link, char* impersonate)
+BOOL HandleQuery(SQLHSTMT stmt, SQLCHAR* query, char* link, char* impersonate, BOOL useRpc)
 {
     if (link != NULL)
     {
-        return ExecuteLQuery(stmt, query, link);
+        if (useRpc)
+        {
+            return ExecuteLQueryRpc(stmt, query, link);
+        }
+        else
+        {
+            return ExecuteLQuery(stmt, query, link);
+        }
     }
     else if (impersonate != NULL)
     {
@@ -116,6 +171,91 @@ BOOL HandleQuery(SQLHSTMT stmt, SQLCHAR* query, char* link, char* impersonate)
     {
         return ExecuteQuery(stmt, query);
     }
+}
+
+//
+// As part of a workaround for Linked RPC Query funkiness, this function
+// will resolve the Schema of a table name on a linked server, so that it can
+// be hardcoded into subsequent RPC queries in the form [database].[schema].[table]
+//
+BOOL GetTableShema(SQLHSTMT stmt, char* link, char* database, char* table)
+{
+    char* prefix = "SELECT TABLE_SCHEMA FROM ";
+    char* middle = ".INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '";
+    char* suffix = "';";
+
+    char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(database) + MSVCRT$strlen(middle) + MSVCRT$strlen(table) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+    MSVCRT$strcpy(query, prefix);
+    MSVCRT$strcat(query, database);
+    MSVCRT$strcat(query, middle);
+    MSVCRT$strcat(query, table);
+    MSVCRT$strcat(query, suffix);
+
+    return ExecuteLQuery(stmt, (SQLCHAR*)query, link);
+}
+
+//
+// Configure sp_serveroption or sp_configure
+//
+BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impersonate) {
+    if (MSVCRT$strcmp(name, "rpc") == 0)
+    {
+        char* prefix = "EXEC sp_serveroption '";
+        char* middle = "', 'rpc out', '";
+        char* suffix = "';";
+
+        char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(link) + MSVCRT$strlen(middle) + MSVCRT$strlen(value) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+        MSVCRT$strcpy(query, prefix);
+        MSVCRT$strcat(query, link);
+        MSVCRT$strcat(query, middle);
+        MSVCRT$strcat(query, value);
+        MSVCRT$strcat(query, suffix);
+
+        //
+        // link will always be passed as NULL here
+        //
+        return HandleQuery(stmt, (SQLCHAR*)query, NULL, impersonate, FALSE);
+    }
+    else
+    {
+        char* reconfigQuery = "EXEC sp_configure 'show advanced options', 1; "
+                       "RECONFIGURE; ";
+        
+        if (!HandleQuery(stmt, (SQLCHAR*)reconfigQuery, NULL, impersonate, FALSE))
+        {
+            return FALSE;
+        }
+
+        char* prefix = "EXEC sp_configure '";
+        char* middle = "', ";
+        char* suffix = "; RECONFIGURE;";
+
+        char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(name) + MSVCRT$strlen(middle) + MSVCRT$strlen(value) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+        MSVCRT$strcpy(query, prefix);
+        MSVCRT$strcat(query, name);
+        MSVCRT$strcat(query, middle);
+        MSVCRT$strcat(query, value);
+        MSVCRT$strcat(query, suffix);
+
+        return HandleQuery(stmt, (SQLCHAR*)query, NULL, impersonate, FALSE);
+    }
+}
+
+//
+// Query the status of RPC on a linked server
+//
+BOOL CheckRpcOnLink(SQLHSTMT stmt, char* link)
+{
+    char* prefix = "SELECT is_rpc_out_enabled FROM sys.servers WHERE lower(name) like '%";
+    char* suffix = "%';";
+
+    char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(link) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+    MSVCRT$strcpy(query, prefix);
+    MSVCRT$strcat(query, link);
+    MSVCRT$strcat(query, suffix);
+
+    return ExecuteQuery(stmt, (SQLCHAR*)query);
+
 }
 
 //
@@ -264,7 +404,15 @@ SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
     //
     ret = ODBC32$SQLAllocHandle(SQL_HANDLE_DBC, *env, &dbc);
     
-    MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;DATABASE=%s;Trusted_Connection=Yes;", server, dbName);
+    if (dbName == NULL)
+    {
+        MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;Trusted_Connection=Yes;", server, dbName);
+    }
+    else
+    {
+        MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;DATABASE=%s;Trusted_Connection=Yes;", server, dbName);
+    }
+    
 
     //
     // connect to the sql server

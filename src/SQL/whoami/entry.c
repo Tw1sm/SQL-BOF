@@ -17,6 +17,7 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
+	SQLHDBC dbc 	= NULL;
 
 	//
 	// default server roles
@@ -37,7 +38,14 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 	char* mappedUser 	= NULL;
 	char** dbRoles 		= NULL;
 
-    SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
+    if (link == NULL)
+	{
+		dbc = ConnectToSqlServer(&env, server, database);
+	}
+	else
+	{
+		dbc = ConnectToSqlServer(&env, server, NULL);
+	}
 
     if (dbc == NULL)
 	{
@@ -63,7 +71,7 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 	// first query
 	//
 	SQLCHAR* query = (SQLCHAR*)"SELECT SYSTEM_USER;";
-	if (!HandleQuery(stmt, query, link, impersonate))
+	if (!HandleQuery(stmt, query, link, impersonate, FALSE))
 	{
 		goto END;
 	}
@@ -79,7 +87,7 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 	// second query
 	//
 	query = (SQLCHAR*)"SELECT USER_NAME();";
-	if (!HandleQuery(stmt, query, link, impersonate))
+	if (!HandleQuery(stmt, query, link, impersonate, FALSE))
 	{
 		goto END;
 	}
@@ -96,7 +104,7 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 	//
 	internal_printf("[*] Gathering roles...\n");
 	query = (SQLCHAR*)"SELECT [name] from sysusers where issqlrole = 1;";
-	if (!HandleQuery(stmt, query, link, impersonate))
+	if (!HandleQuery(stmt, query, link, impersonate, FALSE))
 	{
 		goto END;
 	}
@@ -115,7 +123,7 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 		char* role = dbRoles[i];
 		char query[1024];
 		MSVCRT$sprintf(query, "SELECT IS_MEMBER('%s');", role);
-		if (!HandleQuery(stmt, query, link, impersonate))
+		if (!HandleQuery(stmt, query, link, impersonate, FALSE))
 		{
 			goto END;
 		}
@@ -131,7 +139,7 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 		char* role = roles[i];
 		char query[1024];
 		MSVCRT$sprintf(query, "SELECT IS_SRVROLEMEMBER('%s');", role);
-		if (!HandleQuery(stmt, query, link, impersonate))
+		if (!HandleQuery(stmt, query, link, impersonate, FALSE))
 		{
 			goto END;
 		}

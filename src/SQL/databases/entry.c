@@ -4,7 +4,7 @@
 #include "sql.c"
 
 
-void CheckLinks(char* server, char* database, char* link, char* impersonate)
+void CheckTables(char* server, char* database, char* link, char* impersonate)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
@@ -26,11 +26,11 @@ void CheckLinks(char* server, char* database, char* link, char* impersonate)
 
 	if (link == NULL)
 	{
-		internal_printf("[*] Enumerating linked servers on %s\n\n", server);
+		internal_printf("[*] Enumerating databases on %s\n\n", server);
 	}
 	else
 	{
-		internal_printf("[*] Enumerating linked servers on %s via %s\n\n", link, server);
+		internal_printf("[*] Enumerating databases on %s via %s\n\n", link, server);
 	}
 	
 
@@ -42,8 +42,8 @@ void CheckLinks(char* server, char* database, char* link, char* impersonate)
 	//
 	// Run the query
 	//
-	SQLCHAR* query = (SQLCHAR*)"SELECT name, product, provider, data_source FROM sys.servers WHERE is_linked = 1;";
-	if (!HandleQuery(stmt, query, link, impersonate, FALSE)){
+	SQLCHAR* query = (SQLCHAR*)"SELECT dbid, name, crdate, filename FROM master.dbo.sysdatabases;";
+	if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE)){
 		goto END;
 	}
 	PrintQueryResults(stmt, TRUE);
@@ -95,7 +95,7 @@ VOID go(
 		return;
 	}
 	
-	CheckLinks(server, database, link, impersonate);
+	CheckTables(server, database, link, impersonate);
 
 	printoutput(TRUE);
 };
@@ -104,7 +104,7 @@ VOID go(
 
 int main()
 {
-	CheckLinks("192.168.0.215", "master", NULL, NULL);
+	CheckTables("192.168.0.215", "master", NULL, NULL);
 }
 
 #endif
