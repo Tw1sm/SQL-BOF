@@ -69,8 +69,6 @@ void CheckTableColumns(char* server, char* database, char* link, char* impersona
 		MSVCRT$strcat(query, table);
 		MSVCRT$strcat(query, tableSuffix);
 
-		BeaconPrintf(CALLBACK_OUTPUT, "Query: %s\n", query);
-
 		//
 		// Run the query
 		//
