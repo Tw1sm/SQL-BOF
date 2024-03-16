@@ -472,7 +472,19 @@ SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
     // Allocate a connection handle
     //
     ret = ODBC32$SQLAllocHandle(SQL_HANDLE_DBC, *env, &dbc);
-    MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;DATABASE=%s;Trusted_Connection=Yes;", server, dbName);
+    
+    //
+    // dbName may be NULL when a linked server is used
+    //
+    if (dbName == NULL)
+    {
+        MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;Trusted_Connection=Yes;", server);
+    }
+    else
+    {
+        MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;DATABASE=%s;Trusted_Connection=Yes;", server, dbName);
+    }
+    
 
     //
     // connect to the sql server
