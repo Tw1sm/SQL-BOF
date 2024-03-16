@@ -4,7 +4,7 @@
 #include "sql.c"
 
 
-void CheckTables(char* server, char* database, char* link, char* impersonate)
+void CheckDatabases(char* server, char* database, char* link, char* impersonate)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
@@ -95,7 +95,7 @@ VOID go(
 		return;
 	}
 	
-	CheckTables(server, database, link, impersonate);
+	CheckDatabases(server, database, link, impersonate);
 
 	printoutput(TRUE);
 };
@@ -104,7 +104,7 @@ VOID go(
 
 int main()
 {
-	CheckTables("192.168.0.215", "master", NULL, NULL);
+	CheckDatabases("192.168.0.215", "master", NULL, NULL);
 }
 
 #endif
