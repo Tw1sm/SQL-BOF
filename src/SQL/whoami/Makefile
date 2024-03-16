@@ -11,6 +11,10 @@ all:
 	mkdir -p ../../../SQL/$(BOFNAME) 
 	mv $(BOFNAME)*.o ../../../SQL/$(BOFNAME)
 
+goad:
+	$(MAKE) all
+	scp ../../../SQL/$(BOFNAME)/* jon.snow@10.2.10.11:BOFs/
+
 test:
 	$(CC_x64) entry.c -g $(COMINCLUDE) $(LIBINCLUDE)  -o $(BOFNAME).x64.exe
 	$(CC_x86) entry.c -g $(COMINCLUDE) $(LIBINCLUDE) -o $(BOFNAME).x86.exe
