@@ -152,6 +152,7 @@ BOOL ExecuteIQuery(SQLHSTMT stmt, SQLCHAR* query, char* impersonate)
 //
 BOOL HandleQuery(SQLHSTMT stmt, SQLCHAR* query, char* link, char* impersonate, BOOL useRpc)
 {
+    //internal_printf("Query: %s\n", query);
     if (link != NULL)
     {
         if (useRpc)
@@ -194,6 +195,38 @@ BOOL GetTableShema(SQLHSTMT stmt, char* link, char* database, char* table)
     return ExecuteLQuery(stmt, (SQLCHAR*)query, link);
 }
 
+BOOL CheckModuleOnLink(SQLHSTMT stmt, char* name, char* link)
+{
+    char* prefix = "SELECT CAST(name AS NVARCHAR(128)) AS name, "
+                   "CAST(value_in_use AS INT) AS value_in_use\n"
+                   "FROM sys.configurations\n"
+                   "WHERE name = '";
+    char* suffix = "';";
+
+    char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(name) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+    MSVCRT$strcpy(query, prefix);
+    MSVCRT$strcat(query, name);
+    MSVCRT$strcat(query, suffix);
+
+    return HandleQuery(stmt, (SQLCHAR*)query, link, NULL, FALSE);
+}
+
+BOOL CheckModule(SQLHSTMT stmt, char* name)
+{
+    char* prefix = "SELECT CAST(name AS NVARCHAR(128)) AS name, "
+                  "CAST(value_in_use AS INT) AS value_in_use "
+                  "FROM sys.configurations "
+                  "WHERE name = '";
+    char* suffix = "';";
+
+    char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(name) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+    MSVCRT$strcpy(query, prefix);
+    MSVCRT$strcat(query, name);
+    MSVCRT$strcat(query, suffix);
+
+    return ExecuteQuery(stmt, (SQLCHAR*)query);
+}
+
 //
 // Configure sp_serveroption or sp_configure
 //
@@ -218,18 +251,41 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
     }
     else
     {
-        char* reconfigQuery = "EXEC sp_configure 'show advanced options', 1; "
-                       "RECONFIGURE; ";
+        char* reconfigure = "RECONFIGURE;";
+        char* advOpts = "EXEC sp_configure 'show advanced options', 1;";
         
-        if (!HandleQuery(stmt, (SQLCHAR*)reconfigQuery, NULL, impersonate, FALSE))
+        
+        if (!HandleQuery(stmt, (SQLCHAR*)advOpts, NULL, impersonate, FALSE))
         {
             return FALSE;
         }
 
+        //
+        // Close the cursor
+        //
+        ODBC32$SQLCloseCursor(stmt);
+
+
+        //
+        // Reconfigure
+        //
+        if (!HandleQuery(stmt, (SQLCHAR*)reconfigure, NULL, impersonate, FALSE))
+        {
+            return FALSE;
+        }
+
+        //
+        // Close the cursor
+        //
+        ODBC32$SQLCloseCursor(stmt);
+
+        //
+        // toggle on or off
+        //
         char* prefix = "EXEC sp_configure '";
         char* middle = "', ";
-        char* suffix = "; RECONFIGURE;";
-
+        char* suffix = ";";
+        
         char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(name) + MSVCRT$strlen(middle) + MSVCRT$strlen(value) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
         MSVCRT$strcpy(query, prefix);
         MSVCRT$strcat(query, name);
@@ -237,14 +293,27 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
         MSVCRT$strcat(query, value);
         MSVCRT$strcat(query, suffix);
 
-        return HandleQuery(stmt, (SQLCHAR*)query, NULL, impersonate, FALSE);
+        if (!HandleQuery(stmt, (SQLCHAR*)query, NULL, impersonate, FALSE))
+        {
+            return FALSE;
+        }
+
+        //
+        // Close the cursor
+        //
+        ODBC32$SQLCloseCursor(stmt);
+
+        //
+        // Reconfigure
+        //
+        return HandleQuery(stmt, (SQLCHAR*)reconfigure, NULL, impersonate, FALSE);
     }
 }
 
 //
 // Query the status of RPC on a linked server
 //
-BOOL CheckRpcOnLink(SQLHSTMT stmt, char* link)
+BOOL CheckRpcOnLink(SQLHSTMT stmt, char* link, char* impersonate)
 {
     char* prefix = "SELECT is_rpc_out_enabled FROM sys.servers WHERE lower(name) like '%";
     char* suffix = "%';";
@@ -254,7 +323,7 @@ BOOL CheckRpcOnLink(SQLHSTMT stmt, char* link)
     MSVCRT$strcat(query, link);
     MSVCRT$strcat(query, suffix);
 
-    return ExecuteQuery(stmt, (SQLCHAR*)query);
+    return HandleQuery(stmt, (SQLCHAR*)query, NULL, impersonate, FALSE);
 
 }
 
@@ -403,16 +472,7 @@ SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
     // Allocate a connection handle
     //
     ret = ODBC32$SQLAllocHandle(SQL_HANDLE_DBC, *env, &dbc);
-    
-    if (dbName == NULL)
-    {
-        MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;Trusted_Connection=Yes;", server, dbName);
-    }
-    else
-    {
-        MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;DATABASE=%s;Trusted_Connection=Yes;", server, dbName);
-    }
-    
+    MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;DATABASE=%s;Trusted_Connection=Yes;", server, dbName);
 
     //
     // connect to the sql server
