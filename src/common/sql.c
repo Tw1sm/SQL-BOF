@@ -228,6 +228,27 @@ BOOL CheckModule(SQLHSTMT stmt, char* name)
 }
 
 //
+// Clear the cursor so it can be closed without a 24000 Invalid Cursor State error
+// Doesn't seem to be an issue unless executing multiple linked queries in succession
+// https://learn.microsoft.com/en-us/sql/odbc/reference/syntax/sqlclosecursor-function?view=sql-server-ver16
+//
+void ClearCursor(SQLHSTMT stmt)
+{
+    //
+    // Probably not the cleanest to assume success but
+    //
+    SQLRETURN ret = SQL_SUCCESS;
+    
+    //
+    // Fetch all results to clear the cursor
+    //
+    while(ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+        ret = ODBC32$SQLFetch(stmt);
+        ret = ODBC32$SQLMoreResults(stmt);
+    }
+}
+
+//
 // Configure sp_serveroption or sp_configure
 //
 BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impersonate) {
@@ -254,22 +275,25 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
         char* reconfigure = "RECONFIGURE;";
         char* advOpts = "EXEC sp_configure 'show advanced options', 1;";
         
-        
-        if (!HandleQuery(stmt, (SQLCHAR*)advOpts, NULL, impersonate, FALSE))
+        //
+        // setting TRUE for using rpc query
+        //
+        if (!HandleQuery(stmt, (SQLCHAR*)advOpts, link, impersonate, TRUE))
         {
             return FALSE;
         }
 
+
         //
         // Close the cursor
         //
+        ClearCursor(stmt);
         ODBC32$SQLCloseCursor(stmt);
-
 
         //
         // Reconfigure
         //
-        if (!HandleQuery(stmt, (SQLCHAR*)reconfigure, NULL, impersonate, FALSE))
+        if (!HandleQuery(stmt, (SQLCHAR*)reconfigure, link, impersonate, TRUE))
         {
             return FALSE;
         }
@@ -277,6 +301,7 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
         //
         // Close the cursor
         //
+        ClearCursor(stmt);
         ODBC32$SQLCloseCursor(stmt);
 
         //
@@ -293,7 +318,7 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
         MSVCRT$strcat(query, value);
         MSVCRT$strcat(query, suffix);
 
-        if (!HandleQuery(stmt, (SQLCHAR*)query, NULL, impersonate, FALSE))
+        if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, TRUE))
         {
             return FALSE;
         }
@@ -301,12 +326,13 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
         //
         // Close the cursor
         //
+        ClearCursor(stmt);
         ODBC32$SQLCloseCursor(stmt);
 
         //
         // Reconfigure
         //
-        return HandleQuery(stmt, (SQLCHAR*)reconfigure, NULL, impersonate, FALSE);
+        return HandleQuery(stmt, (SQLCHAR*)reconfigure, link, impersonate, TRUE);
     }
 }
 

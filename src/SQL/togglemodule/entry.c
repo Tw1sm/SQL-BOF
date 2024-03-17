@@ -73,34 +73,35 @@ void ToggleGenericModule(char* server, char* database, char* link, char* imperso
 	if (link == NULL)
 	{
 		internal_printf("[*] Toggling %s on %s...\n\n", module, server);
-		if (!ToggleModule(stmt, module, value, link, impersonate))
-		{
-			goto END;
-		}
-
-		//
-		// Close the cursor
-		//
-		ODBC32$SQLCloseCursor(stmt);
-
-		//
-		// Check new status and print
-		//
-		CheckModule(stmt, module);
-		PrintQueryResults(stmt, TRUE);
 	}
 	else
 	{
 		internal_printf("[*] Toggling %s on %s via %s\n\n", module, link, server);
-		
-		//
-		// TODO: implement
-		//
-
-		CheckModuleOnLink(stmt, module, link);
-		PrintQueryResults(stmt, TRUE);
+	}
+	
+	if (!ToggleModule(stmt, module, value, link, impersonate))
+	{
+		goto END;
 	}
 
+	//
+	// Close the cursor
+	//
+	ODBC32$SQLCloseCursor(stmt);
+
+	//
+	// Check new status and print
+	//
+	if (link == NULL)
+	{
+		CheckModule(stmt, module);
+	}
+	else
+	{
+		CheckModuleOnLink(stmt, module, link);
+	}
+	PrintQueryResults(stmt, TRUE);
+	
 	//
 	// close the cursor
 	//
@@ -161,6 +162,11 @@ VOID go(
 	// we're toggling one of the other modules that we treat the same
 	else
 	{
+		if (UsingLinkAndImpersonate(link, impersonate))
+		{
+			return;
+		}
+
 		ToggleGenericModule(server, database, link, impersonate, module, value);
 	}
 	
