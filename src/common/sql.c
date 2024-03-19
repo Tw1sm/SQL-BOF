@@ -22,6 +22,7 @@ void ShowError(unsigned int handletype, const SQLHANDLE* handle)
 BOOL ExecuteQuery(SQLHSTMT stmt, SQLCHAR* query)
 {
     SQLRETURN ret;
+    //BeaconPrintf(CALLBACK_OUTPUT, "Executing query: %s\n", query);
 
     ret = ODBC32$SQLExecDirect(stmt, query, SQL_NTS);
     if (!SQL_SUCCEEDED(ret))
@@ -471,7 +472,7 @@ void PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader)
             if (SQL_SUCCEEDED(ret))
             {
                 // Print column data
-                if (indicator == SQL_NULL_DATA) MSVCRT$strcpy((char*)buffer, "NULL");
+                if (indicator == SQL_NULL_DATA) MSVCRT$strcpy((char*)buffer, "");
                 internal_printf("%s | ", buffer);
             }
         }

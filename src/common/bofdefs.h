@@ -33,10 +33,13 @@ WINBASEAPI void * WINAPI KERNEL32$HeapAlloc (HANDLE hHeap, DWORD dwFlags, SIZE_T
 WINBASEAPI void *__cdecl MSVCRT$calloc(size_t _NumOfElements, size_t _SizeOfElements);
 WINBASEAPI void __cdecl MSVCRT$free(void *_Memory);
 WINBASEAPI void* WINAPI MSVCRT$malloc(SIZE_T);
+WINBASEAPI int __cdecl MSVCRT$rand(void);
+WINBASEAPI int __cdecl MSVCRT$srand(unsigned int _Seed);
 WINBASEAPI int __cdecl MSVCRT$sprintf(char *__stream, const char *__format, ...);
 DECLSPEC_IMPORT char * __cdecl MSVCRT$strcat(char * __restrict__ _Dest,const char * __restrict__ _Source);
 DECLSPEC_IMPORT int __cdecl MSVCRT$strcmp(const char *_Str1,const char *_Str2);
 WINBASEAPI size_t __cdecl MSVCRT$strlen(const char *_Str);
+WINBASEAPI time_t __cdecl MSVCRT$time(time_t *_Time);
 WINBASEAPI int __cdecl MSVCRT$vsnprintf(char * __restrict__ d,size_t n,const char * __restrict__ format,va_list arg);
 DECLSPEC_IMPORT char * __cdecl MSVCRT$strcpy(char * __restrict__ __dst, const char * __restrict__ __src);
 
@@ -55,6 +58,7 @@ WINBASEAPI SQLRETURN ODBC32$SQLGetDiagRec(SQLSMALLINT HandleType, SQLHANDLE Hand
 WINBASEAPI SQLRETURN ODBC32$SQLNumResultCols(SQLHSTMT StatementHandle, SQLSMALLINT* ColumnCountPtr);
 WINBASEAPI SQLRETURN ODBC32$SQLMoreResults(SQLHSTMT StatementHandle);
 WINBASEAPI SQLRETURN ODBC32$SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
+WINBASEAPI SQLRETURN ODBC32$SQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER StringLength);
 
 #else
 
@@ -74,10 +78,13 @@ WINBASEAPI SQLRETURN ODBC32$SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER 
 #define MSVCRT$calloc calloc
 #define MSVCRT$free free
 #define MSVCRT$malloc malloc
+#define MSVCRT$rand rand
+#define MSVCRT$srand srand
 #define MSVCRT$sprintf sprintf
 #define MSVCRT$strcat strcat
 #define MSVCRT$strcmp strcmp
 #define MSVCRT$strlen strlen
+#define MSVCRT$time time
 #define MSVCRT$vsnprintf vsnprintf
 #define MSVCRT$strcpy strcpy
 
@@ -95,5 +102,6 @@ WINBASEAPI SQLRETURN ODBC32$SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER 
 #define ODBC32$SQLNumResultCols SQLNumResultCols
 #define ODBC32$SQLMoreResults SQLMoreResults
 #define ODBC32$SQLSetEnvAttr SQLSetEnvAttr
+#define ODBC32$SQLSetStmtAttr SQLSetStmtAttr
 
 #endif

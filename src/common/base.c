@@ -1,11 +1,10 @@
 #include <windows.h>
 #include "bofdefs.h"
 #include "beacon.h"
+#include "time.h"
 #ifndef bufsize
 #define bufsize 8192
 #endif
-
-
 
 
 char * output __attribute__((section (".data"))) = 0;  // this is just done so its we don't go into .bss which isn't handled properly
@@ -225,4 +224,23 @@ void bofstop()
     }
 #endif
 	return;
+}
+
+void InitRandomSeed()
+{
+    MSVCRT$srand((unsigned int)MSVCRT$time(NULL));
+}
+
+//
+// Helper func to generate random strings for prodecure names, etc
+//
+char* GenerateRandomString(int length)
+{
+    char* result = (char*)intAlloc(length + 1);
+    for (int i = 0; i < length; i++)
+    {
+        result[i] = (char)(MSVCRT$rand() % 26 + 97);
+    }
+    result[length] = '\0';
+    return result;
 }
