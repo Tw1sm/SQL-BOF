@@ -148,6 +148,7 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 	}
 
 END:
+	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }
 

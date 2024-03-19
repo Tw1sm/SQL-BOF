@@ -60,12 +60,8 @@ void CoerceSmb(char* server, char* database, char* link, char* impersonate, char
 
 	internal_printf("[*] SMB request triggered\n");
 
-	//
-	// close the cursor
-	//
-	ODBC32$SQLCloseCursor(stmt);
-
 END:
+	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }
 

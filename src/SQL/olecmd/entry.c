@@ -97,12 +97,8 @@ void ExecuteOleCmd(char* server, char* database, char* link, char* impersonate, 
 	internal_printf("[*] Command executed\n");
 	internal_printf("[*] Destoryed \"%s\" and \"%s\"\n", output, program);
 
-	//
-	// close the cursor
-	//
-	ODBC32$SQLCloseCursor(stmt);
-
 END:
+	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }
 

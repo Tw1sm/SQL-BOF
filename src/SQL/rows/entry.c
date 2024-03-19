@@ -123,12 +123,8 @@ void CheckTableRows(char* server, char* database, char* link, char* impersonate,
 		PrintQueryResults(stmt, TRUE);
 	}
 
-	//
-	// close the cursor
-	//
-	ODBC32$SQLCloseCursor(stmt);
-
 END:
+	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }
 

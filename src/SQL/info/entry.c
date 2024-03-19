@@ -322,7 +322,6 @@ void GetSQLInfo(char* server, char* database) {
 		goto END;
 	}
 	info.ActiveSessions = GetSingleResult(stmt, FALSE);
-	ODBC32$SQLCloseCursor(stmt);
 
 	
 
@@ -355,6 +354,7 @@ void GetSQLInfo(char* server, char* database) {
 	internal_printf("%-30s: %s\n", " |--> ActiveSessions", info.ActiveSessions);
 
 END:
+	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }
 
