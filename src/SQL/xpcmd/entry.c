@@ -2,6 +2,7 @@
 #include "bofdefs.h"
 #include "base.c"
 #include "sql.c"
+#include "sql_modules.c"
 
 
 void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, char* command)
@@ -29,6 +30,27 @@ void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, c
 	// allocate statement handle
 	//
 	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+
+	//
+	// verify that xp_cmdshell is enabled
+	//
+	switch(GetModuleStatus(stmt, "xp_cmdshell", link, impersonate))
+	{
+		case 0:
+			internal_printf("[!] xp_cmdshell is not enabled\n");
+			goto END;
+		case 1:
+			internal_printf("[*] xp_cmdshell is enabled\n");
+			break;
+		case -1:
+			internal_printf("[!] Error checking xp_cmdshell status\n");
+			goto END;
+	}
+
+	//
+	// close the cursor
+	//
+	ODBC32$SQLCloseCursor(stmt);
 
 	//
 	// don't want to hang beacons forever, so we'll try to set a timeout
@@ -85,12 +107,10 @@ void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, c
 		internal_printf("[*] Command executed (Output not returned for linked server cmd execution)\n");
 	}
 
-	//
-	// close the cursor
-	//
-	ODBC32$SQLCloseCursor(stmt);
+	
 
 END:
+	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }
 

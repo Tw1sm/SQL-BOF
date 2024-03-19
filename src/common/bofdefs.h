@@ -30,6 +30,7 @@ WINBASEAPI void * WINAPI KERNEL32$HeapAlloc (HANDLE hHeap, DWORD dwFlags, SIZE_T
 #define intFree(addr) KERNEL32$HeapFree(KERNEL32$GetProcessHeap(), 0, addr)
 
 // MSVCRT
+WINBASEAPI int __cdecl MSVCRT$atoi(const char *_Str);
 WINBASEAPI void *__cdecl MSVCRT$calloc(size_t _NumOfElements, size_t _SizeOfElements);
 WINBASEAPI void __cdecl MSVCRT$free(void *_Memory);
 WINBASEAPI void* WINAPI MSVCRT$malloc(SIZE_T);
@@ -75,6 +76,7 @@ WINBASEAPI SQLRETURN ODBC32$SQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER 
 
 
 // MSVCRT
+#define MSVCRT$atoi atoi
 #define MSVCRT$calloc calloc
 #define MSVCRT$free free
 #define MSVCRT$malloc malloc

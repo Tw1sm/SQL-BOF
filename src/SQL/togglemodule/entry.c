@@ -2,6 +2,7 @@
 #include "bofdefs.h"
 #include "base.c"
 #include "sql.c"
+#include "sql_modules.c"
 
 
 // rpc requires different functions/values than the other modules
@@ -92,14 +93,9 @@ void ToggleGenericModule(char* server, char* database, char* link, char* imperso
 	//
 	// Check new status and print
 	//
-	if (link == NULL)
-	{
-		CheckModule(stmt, module);
-	}
-	else
-	{
-		CheckModuleOnLink(stmt, module, link);
-	}
+
+	CheckModuleStatus(stmt, module, link, impersonate);
+
 	PrintQueryResults(stmt, TRUE);
 	
 	//
