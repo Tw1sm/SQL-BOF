@@ -52,6 +52,30 @@ void ExecuteOleCmd(char* server, char* database, char* link, char* impersonate, 
 	//
 	ODBC32$SQLCloseCursor(stmt);
 
+	//
+	// if using linked server, ensure rpc is enabled
+	//
+	if (link != NULL)
+	{
+		switch(GetRpcStatus(stmt, link))
+		{
+			case 0:
+				internal_printf("[!] RPC out is not enabled on linked server\n");
+				goto END;
+			case 1:
+				internal_printf("[*] RPC out is enabled on linked server\n");
+				break;
+			case -1:
+				internal_printf("[!] Error checking RPC status on linked server\n");
+				goto END;
+		}
+		
+		//
+		// close the cursor
+		//
+		ODBC32$SQLCloseCursor(stmt);
+	}
+
 	internal_printf("[*] Executing system command...\n\n");
 
 	InitRandomSeed();

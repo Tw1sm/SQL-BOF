@@ -112,6 +112,30 @@ BOOL CheckRpcOnLink(SQLHSTMT stmt, char* link, char* impersonate)
 }
 
 //
+// Execute query and return an int
+// Used to verify rpc status before executing a rpc linked query
+// 0 = disabled 1 = enabled -1 = error
+//
+int GetRpcStatus(SQLHSTMT stmt, char* link)
+{
+    char* prefix = "SELECT is_rpc_out_enabled "
+                   "FROM sys.servers WHERE name = '";
+    char* suffix = "';";
+
+    char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(link) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+    MSVCRT$strcpy(query, prefix);
+    MSVCRT$strcat(query, link);
+    MSVCRT$strcat(query, suffix);
+
+    if (!HandleQuery(stmt, (SQLCHAR*)query, NULL, NULL, FALSE))
+    {
+        return -1;
+    }
+
+    return MSVCRT$atoi(GetSingleResult(stmt, FALSE));
+}
+
+//
 // Execute query and hold results for printing
 //
 BOOL CheckModuleStatus(SQLHSTMT stmt, char* name, char* link, char* impersonate)
