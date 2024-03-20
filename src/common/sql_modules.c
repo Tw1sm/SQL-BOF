@@ -137,8 +137,8 @@ BOOL CheckModuleStatus(SQLHSTMT stmt, char* name, char* link, char* impersonate)
 //
 int GetModuleStatus(SQLHSTMT stmt, char* name, char* link, char* impersonate)
 {
-    char* prefix = "SELECT CAST(value_in_use AS INT) AS value_in_use\n"
-                  "FROM sys.configurations\n"
+    char* prefix = "SELECT CAST(value_in_use AS INT) AS value_in_use "
+                  "FROM sys.configurations "
                   "WHERE name = '";
     char* suffix = "';";
 
@@ -152,9 +152,5 @@ int GetModuleStatus(SQLHSTMT stmt, char* name, char* link, char* impersonate)
         return -1;
     }
 
-    char* result = GetSingleResult(stmt, FALSE);
-    BeaconPrintf(CALLBACK_OUTPUT, "Result: %s\n", result);
-    //convert result to int from char*
-    int value = MSVCRT$atoi(result);
-    return value;
+    return MSVCRT$atoi(GetSingleResult(stmt, FALSE));
 }

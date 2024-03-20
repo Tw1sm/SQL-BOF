@@ -2,6 +2,7 @@
 #include "bofdefs.h"
 #include "base.c"
 #include "sql.c"
+#include "sql_modules.c"
 
 
 void ExecuteOleCmd(char* server, char* database, char* link, char* impersonate, char* command)
@@ -29,6 +30,27 @@ void ExecuteOleCmd(char* server, char* database, char* link, char* impersonate, 
 	// allocate statement handle
 	//
 	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+
+	//
+	// verify that OLE Automation Procedures is enabled
+	//
+	switch(GetModuleStatus(stmt, "OLE Automation Procedures", link, impersonate))
+	{
+		case 0:
+			internal_printf("[!] OLE Automation Procedures is not enabled\n");
+			goto END;
+		case 1:
+			internal_printf("[*] OLE Automation Procedures is enabled\n");
+			break;
+		case -1:
+			internal_printf("[!] Error checking OLE Automation Procedures status\n");
+			goto END;
+	}
+
+	//
+	// clear the cursor
+	//
+	ODBC32$SQLCloseCursor(stmt);
 
 	internal_printf("[*] Executing system command...\n\n");
 
