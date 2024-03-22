@@ -26,11 +26,11 @@ void CheckTableRows(char* server, char* database, char* link, char* impersonate,
 
 	if (link == NULL)
 	{
-		internal_printf("[*] Getting row count from table %s in %s on %s\n", table, database, server);
+		internal_printf("[*] Getting row count from table %s in %s on %s\n\n", table, database, server);
 	}
 	else
 	{
-		internal_printf("[*] Getting row count from table %s in %s on %s via %s\n", table, database, link, server);
+		internal_printf("[*] Getting row count from table %s in %s on %s via %s\n\n", table, database, link, server);
 	}
 	
 
