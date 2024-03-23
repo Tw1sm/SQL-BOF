@@ -106,7 +106,14 @@ VOID go(
 
 int main()
 {
-	CustomQuery("192.168.0.215", "master", NULL, NULL, "SELECT TOP 5 * FROM sys.databases;");
+	internal_printf("============ BASE TEST ============\n\n");
+	CustomQuery("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "SELECT name, database_id FROM sys.databases;");
+
+	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
+	CustomQuery("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "SELECT name, database_id FROM sys.databases;");
+
+	internal_printf("\n\n============ LINK TEST ============\n\n");
+	CustomQuery("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "SELECT name, database_id FROM sys.databases;");
 }
 
 #endif

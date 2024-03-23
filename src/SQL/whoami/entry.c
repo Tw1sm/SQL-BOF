@@ -202,7 +202,14 @@ VOID go(
 
 int main()
 {
-	Whoami("192.168.0.215", "master", NULL, NULL);
+	internal_printf("============ BASE TEST ============\n\n");
+	Whoami("castelblack.north.sevenkingdoms.local", "master", NULL, NULL);
+
+	internal_printf("\n============ IMPERSONATE TEST ============\n\n");
+	Whoami("castelblack.north.sevenkingdoms.local", "master", NULL, "sa");
+
+	internal_printf("\n============ LINK TEST ====\n\n");
+	Whoami("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL);
 }
 
 #endif

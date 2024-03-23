@@ -187,7 +187,14 @@ VOID go(
 
 int main()
 {
-	ExecuteXpCmd("192.168.0.215", "master", NULL, NULL, "whoami /all");
+	internal_printf("============ BASE TEST ============\n\n");
+	ExecuteXpCmd("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "whoami /user");
+
+	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
+	ExecuteXpCmd("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "whoami /user");
+
+	internal_printf("\n\n============ LINK TEST ============\n\n");
+	ExecuteXpCmd("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "whoami /user");
 }
 
 #endif

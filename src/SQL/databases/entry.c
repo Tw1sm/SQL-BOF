@@ -100,7 +100,14 @@ VOID go(
 
 int main()
 {
-	CheckDatabases("192.168.0.215", "master", NULL, NULL);
+	internal_printf("============ BASE TEST ============\n\n");
+	CheckDatabases("castelblack.north.sevenkingdoms.local", "master", NULL, NULL);
+
+	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
+	CheckDatabases("castelblack.north.sevenkingdoms.local", "master", NULL, "sa");
+
+	internal_printf("\n\n============ LINK TEST ============\n\n");
+	CheckDatabases("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL);
 }
 
 #endif

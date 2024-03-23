@@ -170,7 +170,29 @@ VOID go(
 
 int main()
 {
-	ToggleRpc("192.168.0.215", "master", NULL, NULL, "TRUE");
+	internal_printf("============ LINK RPC DISABLE TEST ============\n\n");
+	ToggleRpc("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "FALSE");
+
+	internal_printf("\n\n============ LINK RPC ENABLE TEST ============\n\n");
+	ToggleRpc("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "TRUE");
+
+	internal_printf("\n\n============ BASE XP_CMDSHELL DISABLE TEST ============\n\n");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "xp_cmdshell", "0");
+
+	internal_printf("\n\n============ BASE XP_CMDSHELL ENABLE TEST ============\n\n");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "xp_cmdshell", "1");
+
+	internal_printf("\n\n============ IMPERSONATE XP_CMDSHELL DISABLE TEST ============\n\n");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "xp_cmdshell", "0");
+
+	internal_printf("\n\n============ IMPERSONATE XP_CMDSHELL ENABLE TEST ============\n\n");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "xp_cmdshell", "1");	
+
+	internal_printf("\n\n============ LINK XP_CMDSHELL DISABLE TEST ============\n\n");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "xp_cmdshell", "0");
+
+	internal_printf("\n\n============ LINK XP_CMDSHELL ENABLE TEST ============\n\n");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "xp_cmdshell", "1");
 }
 
 #endif

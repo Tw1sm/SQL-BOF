@@ -97,7 +97,7 @@ void CheckTableRows(char* server, char* database, char* link, char* impersonate,
 			goto END;
 		}
 
-		char* schema = GetSingleResult(stmt, TRUE);
+		char* schema = GetSingleResult(stmt, FALSE);
 		internal_printf("[*] Table schema for %s is: %s\n\n", table, schema);
 
 		//
@@ -186,7 +186,14 @@ VOID go(
 
 int main()
 {
-	CheckTableRows("192.168.0.215", "master", NULL, NULL, "CustomTable");
+	internal_printf("============ BASE TEST ============\n\n");
+	CheckTableRows("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "spt_monitor");
+
+	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
+	CheckTableRows("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "spt_monitor");
+
+	internal_printf("\n\n============ LINK TEST ============\n\n");
+	CheckTableRows("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "spt_monitor");
 }
 
 #endif

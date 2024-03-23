@@ -77,7 +77,8 @@ VOID go(
 
 int main()
 {
-	CheckImpersonate("192.168.0.215", "master");
+	internal_printf("============ BASE TEST ============\n\n");
+	CheckImpersonate("castelblack.north.sevenkingdoms.local", "master");
 }
 
 #endif

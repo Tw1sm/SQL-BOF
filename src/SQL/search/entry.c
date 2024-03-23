@@ -115,7 +115,14 @@ VOID go(
 
 int main()
 {
-	Search("192.168.0.215", "master", NULL, NULL, "idle");
+	internal_printf("============ BASE TEST ============\n\n");
+	Search("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "idle");
+
+	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
+	Search("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "idle");
+
+	internal_printf("\n\n============ LINK TEST ============\n\n");
+	Search("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "idle");
 }
 
 #endif

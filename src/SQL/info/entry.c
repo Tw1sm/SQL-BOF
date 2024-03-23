@@ -393,7 +393,8 @@ VOID go(
 
 int main()
 {
-	GetSQLInfo("192.168.0.215", "master");
+	internal_printf("============ BASE TEST ============\n\n");
+	GetSQLInfo("castelblack.north.sevenkingdoms.local", "master");
 }
 
 #endif

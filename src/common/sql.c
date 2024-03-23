@@ -22,6 +22,7 @@ void ShowError(unsigned int handletype, const SQLHANDLE* handle)
 BOOL ExecuteQuery(SQLHSTMT stmt, SQLCHAR* query)
 {
     SQLRETURN ret;
+    //internal_printf("Executing query: %s\n", query);
     //BeaconPrintf(CALLBACK_OUTPUT, "Executing query: %s\n", query);
 
     ret = ODBC32$SQLExecDirect(stmt, query, SQL_NTS);
@@ -214,7 +215,7 @@ void ClearCursor(SQLHSTMT stmt)
     // Fetch all results to clear the cursor
     //
     while(ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-        ret = ODBC32$SQLFetch(stmt);
+        ODBC32$SQLFetch(stmt);
         ret = ODBC32$SQLMoreResults(stmt);
     }
 }
@@ -274,12 +275,37 @@ char* GetSingleResult(SQLHSTMT stmt, BOOL hasHeader)
 {
     SQLCHAR* buf = (SQLCHAR*)MSVCRT$malloc(1024 * sizeof(SQLCHAR));
     SQLLEN indicator;
-    ODBC32$SQLFetch(stmt);
-    ODBC32$SQLGetData(stmt, 1, SQL_C_CHAR, buf, 1024, &indicator);
+    SQLRETURN ret;
+
+    ret = ODBC32$SQLFetch(stmt);
+    if (!SQL_SUCCEEDED(ret))
+    {
+        internal_printf("Error fetching results.\n");
+        return NULL;
+    }
+
+    ret = ODBC32$SQLGetData(stmt, 1, SQL_C_CHAR, buf, 1024, &indicator);
+    if (!SQL_SUCCEEDED(ret))
+    {
+        internal_printf("Error retrieving data.\n");
+        return NULL;
+    }
+
     if (hasHeader)
     {
-        ODBC32$SQLFetch(stmt);
-        ODBC32$SQLGetData(stmt, 1, SQL_C_CHAR, buf, 1024, &indicator);
+        ret = ODBC32$SQLFetch(stmt);
+        if (!SQL_SUCCEEDED(ret))
+        {
+            internal_printf("Error fetching results.\n");
+            return NULL;
+        }
+
+        ret = ODBC32$SQLGetData(stmt, 1, SQL_C_CHAR, buf, 1024, &indicator);
+        if (!SQL_SUCCEEDED(ret))
+        {
+            internal_printf("Error retrieving data.\n");
+            return NULL;
+        }
     }
     return (char*)buf;
 }
@@ -287,7 +313,7 @@ char* GetSingleResult(SQLHSTMT stmt, BOOL hasHeader)
 //
 // prints the results of a query
 //
-void PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader)
+BOOL PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader)
 {
     SQLSMALLINT columns;
     SQLRETURN ret;
@@ -297,7 +323,7 @@ void PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader)
     if (!SQL_SUCCEEDED(ret))
     {
         internal_printf("Error retrieving column count.\n");
-        return;
+        return FALSE;
     }
 
     SQLCHAR buffer[1024];
@@ -310,14 +336,16 @@ void PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader)
     {
         for (SQLSMALLINT i = 1; i <= columns; i++)
         {
-            ODBC32$SQLDescribeCol(stmt, i, buffer, sizeof(buffer), &columnNameLength, &dataType, &columnSize, &decimalDigits, &nullable);
+            ret = ODBC32$SQLDescribeCol(stmt, i, buffer, sizeof(buffer), &columnNameLength, &dataType, &columnSize, &decimalDigits, &nullable);
+            if (!SQL_SUCCEEDED(ret))
+            {
+                internal_printf("Error retrieving column information.\n");
+                return FALSE;
+            }
             internal_printf("%s | ", buffer);
             totalLength += columnNameLength + 3;
         }
-    }
-
-    if (hasHeader)
-    {
+   
         internal_printf("\n");
         for (int i = 0; i < totalLength; i++)
         {
@@ -359,12 +387,31 @@ SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
     // Allocate an environment handle and set ODBC version
     //
     ret = ODBC32$SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, env);
+    if (!SQL_SUCCEEDED(ret))
+    {
+        internal_printf("[-] Error allocating environment handle\n");
+        ShowError(SQL_HANDLE_ENV, *env);
+        return NULL;
+    }
+
     ret = ODBC32$SQLSetEnvAttr(*env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC3, 0);
+    if (!SQL_SUCCEEDED(ret))
+    {
+        internal_printf("[-] Error setting ODBC version\n");
+        ShowError(SQL_HANDLE_ENV, *env);
+        return NULL;
+    }
 
     //
     // Allocate a connection handle
     //
     ret = ODBC32$SQLAllocHandle(SQL_HANDLE_DBC, *env, &dbc);
+    if (!SQL_SUCCEEDED(ret))
+    {
+        internal_printf("[-] Error allocating connection handle\n");
+        ShowError(SQL_HANDLE_ENV, *env);
+        return NULL;
+    }
     
     //
     // dbName may be NULL when a linked server is used
@@ -384,17 +431,14 @@ SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
     //
     internal_printf("[*] Connecting to %s:1433\n", server);
     ret = ODBC32$SQLDriverConnect(dbc, NULL, connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_COMPLETE);
-    if (SQL_SUCCEEDED(ret))
+    if (!SQL_SUCCEEDED(ret))
     {
-        internal_printf("[+] Successfully connected to database\n");
-    }
-    else
-    {
-        internal_printf("[-] Error connecting to database.\n");
+        internal_printf("[-] Error connecting to database\n");
         ShowError(SQL_HANDLE_DBC, dbc);
-        dbc = NULL; // Set dbc to NULL to indicate failure
+        return NULL;
     }
-
+    
+    internal_printf("[+] Successfully connected to database\n");
     return dbc;
 }
 
@@ -403,22 +447,56 @@ SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
 //
 void DisconnectSqlServer(SQLHENV env, SQLHDBC dbc, SQLHSTMT stmt)
 {
+    SQLRETURN ret;
 	internal_printf("\n[*] Disconnecting from server\n");
 
 	if (stmt != NULL)
     {
-		ODBC32$SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+        //
+        // free the statement handle
+        //
+		ret = ODBC32$SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+        if (!SQL_SUCCEEDED(ret))
+        {
+            internal_printf("[-] Error freeing statement handle\n");
+            ShowError(SQL_HANDLE_STMT, stmt);
+        }
 	}
 
 	if (dbc != NULL)
     {
-		ODBC32$SQLDisconnect(dbc);
-		ODBC32$SQLFreeHandle(SQL_HANDLE_DBC, dbc);
+        //
+        // disconnect from the server
+        //
+		ret = ODBC32$SQLDisconnect(dbc);
+        if (!SQL_SUCCEEDED(ret))
+        {
+            internal_printf("[-] Error disconnecting from server\n");
+            ShowError(SQL_HANDLE_DBC, dbc);
+        }
+
+        //
+        // free the connection handle
+        //
+		ret = ODBC32$SQLFreeHandle(SQL_HANDLE_DBC, dbc);
+        if (!SQL_SUCCEEDED(ret))
+        {
+            internal_printf("[-] Error freeing connection handle\n");
+            ShowError(SQL_HANDLE_DBC, dbc);
+        }
 	}
 
 	if (env != NULL)
     {
-		ODBC32$SQLFreeHandle(SQL_HANDLE_ENV, env);
+        //
+        // free the environment handle
+        //
+		ret = ODBC32$SQLFreeHandle(SQL_HANDLE_ENV, env);
+        if (!SQL_SUCCEEDED(ret))
+        {
+            internal_printf("[-] Error freeing environment handle\n");
+            ShowError(SQL_HANDLE_ENV, env);
+        }
 	}
 
 }
