@@ -92,7 +92,7 @@ WINBASEAPI SQLRETURN ODBC32$SQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER 
 
 // ODBC32
 #define ODBC32$SQLAllocHandle SQLAllocHandle
-#define ODBC32$SqlCloseCursor SqlCloseCursor
+#define ODBC32$SQLCloseCursor SQLCloseCursor
 #define ODBC32$SQLDescribeCol SQLDescribeCol
 #define ODBC32$SQLDisconnect SQLDisconnect
 #define ODBC32$SQLDriverConnect SQLDriverConnect

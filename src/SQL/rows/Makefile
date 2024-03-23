@@ -1,6 +1,6 @@
 BOFNAME := rows
 COMINCLUDE := -I ../../common
-LIBINCLUDE :=
+LIBINCLUDE := -l odbc32
 CC_x64 := x86_64-w64-mingw32-gcc
 CC_x86 := i686-w64-mingw32-gcc
 CC=x86_64-w64-mingw32-clang
@@ -14,6 +14,10 @@ all:
 test:
 	$(CC_x64) entry.c -g $(COMINCLUDE) $(LIBINCLUDE)  -o $(BOFNAME).x64.exe
 	$(CC_x86) entry.c -g $(COMINCLUDE) $(LIBINCLUDE) -o $(BOFNAME).x86.exe
+
+test_goad:
+	$(MAKE) test
+	scp $(BOFNAME)*.exe jon.snow@10.2.10.11:BOFs/
 
 scanbuild:
 	$(CC) entry.c -o $(BOFNAME).scanbuild.exe $(COMINCLUDE) $(LIBINCLUDE)
