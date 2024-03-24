@@ -9,6 +9,8 @@ void Search(char* server, char* database, char* link, char* impersonate, char* k
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
 	SQLHDBC dbc 	= NULL;
+	char* query 	= NULL;
+	SQLRETURN ret;
 
 
     if (link == NULL)
@@ -37,7 +39,12 @@ void Search(char* server, char* database, char* link, char* impersonate, char* k
 	//
 	// allocate statement handle
 	//
-	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	ret = ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	if (!SQL_SUCCEEDED(ret))
+	{
+		internal_printf("[!] Error allocating statement handle\n");
+		goto END;
+	}
 
 	//
 	// Construct query
@@ -46,12 +53,14 @@ void Search(char* server, char* database, char* link, char* impersonate, char* k
 	char* middle = ".information_schema.columns WHERE column_name LIKE '%";
 	char* suffix = "%';";
 	
-	char* query = (char*)intAlloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(database) + MSVCRT$strlen(middle) + MSVCRT$strlen(keyword) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+	size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(database) + MSVCRT$strlen(middle) + MSVCRT$strlen(keyword) + MSVCRT$strlen(suffix) + 1;
+	query = (char*)intAlloc(totalSize * sizeof(char));
+	
 	MSVCRT$strcpy(query, prefix);
-	MSVCRT$strcat(query, database);
-	MSVCRT$strcat(query, middle);
-	MSVCRT$strcat(query, keyword);
-	MSVCRT$strcat(query, suffix);
+	MSVCRT$strncat(query, database, totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, middle, 	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, keyword, 	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, suffix, 	totalSize - MSVCRT$strlen(query) - 1);
 
 	//
 	// Run the query
@@ -59,9 +68,11 @@ void Search(char* server, char* database, char* link, char* impersonate, char* k
 	if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, TRUE)){
 		goto END;
 	}
+
 	PrintQueryResults(stmt, TRUE);
 
 END:
+	if (query != NULL) intFree(query);
 	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }

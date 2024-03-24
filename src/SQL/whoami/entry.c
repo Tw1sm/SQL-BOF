@@ -3,6 +3,15 @@
 #include "base.c"
 #include "sql.c"
 
+void FreeResults(char** results)
+{
+	for (int i = 0; results[i] != NULL; i++)
+	{
+		intFree(results[i]);
+	}
+	intFree(results);
+}
+
 void PrintMemberStatus(char* roleName, char* status)
 {
 	if (status[0] == '0') {
@@ -15,9 +24,13 @@ void PrintMemberStatus(char* roleName, char* status)
 
 void Whoami(char* server, char* database, char* link, char* impersonate)
 {
-    SQLHENV env		= NULL;
-    SQLHSTMT stmt 	= NULL;
-	SQLHDBC dbc 	= NULL;
+    SQLHENV env			= NULL;
+    SQLHSTMT stmt 		= NULL;
+	SQLHDBC dbc 		= NULL;
+	char* sysUser 		= NULL;
+	char* mappedUser 	= NULL;
+	char** dbRoles 		= NULL;
+	SQLRETURN ret;
 
 	//
 	// default server roles
@@ -32,11 +45,6 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 		"dbcreator",
 		"bulkadmin"
 	};
-	
-	
-	char* sysUser 		= NULL;
-	char* mappedUser 	= NULL;
-	char** dbRoles 		= NULL;
 
     if (link == NULL)
 	{
@@ -65,7 +73,12 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 	//
 	// allocate statement handle
 	//
-	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	ret = ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	if (!SQL_SUCCEEDED(ret))
+	{
+		internal_printf("[!] Failed to allocate statement handle\n");
+		goto END;
+	}
 
 	//
 	// first query
@@ -121,14 +134,25 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 	for (int i = 0; dbRoles[i] != NULL; i++)
 	{
 		char* role = dbRoles[i];
-		char query[1024];
+		char* query = (char*)intAlloc(MSVCRT$strlen(role) + 32);
 		MSVCRT$sprintf(query, "SELECT IS_MEMBER('%s');", role);
 		if (!HandleQuery(stmt, query, link, impersonate, FALSE))
 		{
 			goto END;
 		}
-		PrintMemberStatus(role, GetSingleResult(stmt, FALSE));
-		ODBC32$SQLCloseCursor(stmt);
+		
+		char* result = GetSingleResult(stmt, FALSE);
+		PrintMemberStatus(role, result);
+		
+		intFree(query);
+		intFree(result);
+		
+		ret = ODBC32$SQLCloseCursor(stmt);
+		if (!SQL_SUCCEEDED(ret))
+		{
+			internal_printf("[!] Failed to close cursor\n");
+			goto END;
+		}
 	}
 	
 	//
@@ -137,17 +161,31 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 	for (int i = 0; i < sizeof(roles) / sizeof(roles[0]); i++)
 	{
 		char* role = roles[i];
-		char query[1024];
+		char* query = (char*)intAlloc(MSVCRT$strlen(role) + 32);
 		MSVCRT$sprintf(query, "SELECT IS_SRVROLEMEMBER('%s');", role);
 		if (!HandleQuery(stmt, query, link, impersonate, FALSE))
 		{
 			goto END;
 		}
-		PrintMemberStatus(role, GetSingleResult(stmt, FALSE));
-		ODBC32$SQLCloseCursor(stmt);
+		
+		char* result = GetSingleResult(stmt, FALSE);
+		PrintMemberStatus(role, result);
+
+		intFree(query);
+		intFree(result);
+		
+		ret = ODBC32$SQLCloseCursor(stmt);
+		if (!SQL_SUCCEEDED(ret))
+		{
+			internal_printf("[!] Failed to close cursor\n");
+			goto END;
+		}
 	}
 
 END:
+	if (sysUser != NULL) intFree(sysUser);
+	if (mappedUser != NULL) intFree(mappedUser);
+	if (dbRoles != NULL) FreeResults(dbRoles);
 	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }

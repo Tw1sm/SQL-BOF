@@ -25,10 +25,44 @@ typedef struct SQLINFO {
     char*	ActiveSessions;
 } SQLINFO;
 
+void FreeAttr(char* attr) {
+	if (attr == NULL) {
+		return;
+	}
+
+	intFree(attr);
+}
+
+void FreeSqlInfo(SQLINFO* info) {
+    if (info == NULL) {
+        return;
+    }
+
+    FreeAttr(info->ComputerName);
+	FreeAttr(info->DomainName);
+	FreeAttr(info->ServicePid);
+	FreeAttr(info->ServiceName);
+	FreeAttr(info->ServiceAccount);
+	FreeAttr(info->AuthenticationMode);
+	FreeAttr(info->ForcedEncryption);
+	FreeAttr(info->Clustered);
+	FreeAttr(info->SqlServerVersionNumber);
+	FreeAttr(info->SqlServerMajorVersion);
+	FreeAttr(info->SqlServerEdition);
+	FreeAttr(info->SqlServerServicePack);
+	FreeAttr(info->OsArchitecture);
+	FreeAttr(info->OsMachineType);
+	FreeAttr(info->OsVersion);
+	FreeAttr(info->OsVersionNumber);
+	FreeAttr(info->CurrentLogin);
+	FreeAttr(info->ActiveSessions);
+}
+
 
 void GetSQLInfo(char* server, char* database) {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
+	SQLRETURN ret;
 	SQLINFO info;
 	
     SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
@@ -43,7 +77,12 @@ void GetSQLInfo(char* server, char* database) {
 	//
 	// allocate statement handle
 	//
-	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	ret = ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	if (!SQL_SUCCEEDED(ret))
+	{
+		internal_printf("[!] Error allocating statement handle\n");
+		goto END;
+	}
 
 	//
 	// first query - IsSysAdmin
@@ -53,7 +92,8 @@ void GetSQLInfo(char* server, char* database) {
 	{
 		goto END;
 	}
-	if (GetSingleResult(stmt, FALSE)[0] == '1')
+	char* result = GetSingleResult(stmt, FALSE);
+	if ( result[0] == '1')
 	{
 		info.IsSysAdmin = TRUE;
 	}
@@ -61,6 +101,8 @@ void GetSQLInfo(char* server, char* database) {
 	{
 		info.IsSysAdmin = FALSE;
 	}
+
+	intFree(result);
 	ODBC32$SQLCloseCursor(stmt);
 
 	//
@@ -354,6 +396,7 @@ void GetSQLInfo(char* server, char* database) {
 	internal_printf("%-30s: %s\n", " |--> ActiveSessions", info.ActiveSessions);
 
 END:
+	FreeSqlInfo(&info);
 	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }

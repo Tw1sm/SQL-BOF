@@ -10,23 +10,33 @@
 // Configure sp_serveroption or sp_configure
 //
 BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impersonate) {
+    char* query = NULL;
+    size_t totalSize;
+    SQLRETURN ret;
+
     if (MSVCRT$strcmp(name, "rpc") == 0)
     {
         char* prefix = "EXEC sp_serveroption '";
         char* middle = "', 'rpc out', '";
         char* suffix = "';";
 
-        char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(link) + MSVCRT$strlen(middle) + MSVCRT$strlen(value) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+        totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(link) + MSVCRT$strlen(middle) + MSVCRT$strlen(value) + MSVCRT$strlen(suffix) + 1;
+        query = (char*)intAlloc(totalSize * sizeof(char));
+
         MSVCRT$strcpy(query, prefix);
-        MSVCRT$strcat(query, link);
-        MSVCRT$strcat(query, middle);
-        MSVCRT$strcat(query, value);
-        MSVCRT$strcat(query, suffix);
+        MSVCRT$strncat(query, link,     totalSize - MSVCRT$strlen(query) - 1);
+        MSVCRT$strncat(query, middle,   totalSize - MSVCRT$strlen(query) - 1);
+        MSVCRT$strncat(query, value,    totalSize - MSVCRT$strlen(query) - 1);
+        MSVCRT$strncat(query, suffix,   totalSize - MSVCRT$strlen(query) - 1);
 
         //
         // link will always be passed as NULL here
         //
-        return HandleQuery(stmt, (SQLCHAR*)query, NULL, impersonate, FALSE);
+        BOOL result = HandleQuery(stmt, (SQLCHAR*)query, NULL, impersonate, FALSE);
+
+        intFree(query);
+
+        return result;
     }
     else
     {
@@ -43,10 +53,9 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
 
 
         //
-        // Close the cursor
+        // Clear the cursor
         //
         ClearCursor(stmt);
-        ODBC32$SQLCloseCursor(stmt);
 
         //
         // Reconfigure
@@ -57,10 +66,9 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
         }
 
         //
-        // Close the cursor
+        // Clear the cursor
         //
         ClearCursor(stmt);
-        ODBC32$SQLCloseCursor(stmt);
 
         //
         // toggle on or off
@@ -69,12 +77,14 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
         char* middle = "', ";
         char* suffix = ";";
         
-        char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(name) + MSVCRT$strlen(middle) + MSVCRT$strlen(value) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+        totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(name) + MSVCRT$strlen(middle) + MSVCRT$strlen(value) + MSVCRT$strlen(suffix) + 1;
+        query = (char*)intAlloc(totalSize * sizeof(char));
+
         MSVCRT$strcpy(query, prefix);
-        MSVCRT$strcat(query, name);
-        MSVCRT$strcat(query, middle);
-        MSVCRT$strcat(query, value);
-        MSVCRT$strcat(query, suffix);
+        MSVCRT$strncat(query, name,     totalSize - MSVCRT$strlen(query) - 1);
+        MSVCRT$strncat(query, middle,   totalSize - MSVCRT$strlen(query) - 1);
+        MSVCRT$strncat(query, value,    totalSize - MSVCRT$strlen(query) - 1);
+        MSVCRT$strncat(query, suffix,   totalSize - MSVCRT$strlen(query) - 1);
 
         if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, TRUE))
         {
@@ -82,15 +92,18 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
         }
 
         //
-        // Close the cursor
+        // Clear the cursor
         //
         ClearCursor(stmt);
-        ODBC32$SQLCloseCursor(stmt);
 
         //
         // Reconfigure
         //
-        return HandleQuery(stmt, (SQLCHAR*)reconfigure, link, impersonate, TRUE);
+        BOOL result = HandleQuery(stmt, (SQLCHAR*)reconfigure, link, impersonate, TRUE);
+
+        intFree(query);
+
+        return result;
     }
 }
 
@@ -102,37 +115,58 @@ BOOL CheckRpcOnLink(SQLHSTMT stmt, char* link, char* impersonate)
     char* prefix = "SELECT is_rpc_out_enabled FROM sys.servers WHERE lower(name) like '%";
     char* suffix = "%';";
 
-    char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(link) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+    size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(link) + MSVCRT$strlen(suffix) + 1;
+    char* query = (char*)intAlloc(totalSize * sizeof(char));
+
     MSVCRT$strcpy(query, prefix);
-    MSVCRT$strcat(query, link);
-    MSVCRT$strcat(query, suffix);
+    MSVCRT$strncat(query, link,     totalSize - MSVCRT$strlen(query) - 1);
+    MSVCRT$strncat(query, suffix,    totalSize - MSVCRT$strlen(query) - 1);
 
-    return HandleQuery(stmt, (SQLCHAR*)query, NULL, impersonate, FALSE);
+    BOOL result = HandleQuery(stmt, (SQLCHAR*)query, NULL, impersonate, FALSE);
 
+    intFree(query);
+
+    return result;
 }
 
 //
-// Execute query and return an int
 // Used to verify rpc status before executing a rpc linked query
-// 0 = disabled 1 = enabled -1 = error
 //
-int GetRpcStatus(SQLHSTMT stmt, char* link)
+BOOL IsRpcEnabled(SQLHSTMT stmt, char* link)
 {
+    BOOL enabled;
+
     char* prefix = "SELECT is_rpc_out_enabled "
                    "FROM sys.servers WHERE name = '";
     char* suffix = "';";
 
-    char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(link) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+    size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(link) + MSVCRT$strlen(suffix) + 1;
+    char* query = (char*)intAlloc(totalSize * sizeof(char));
+    
     MSVCRT$strcpy(query, prefix);
-    MSVCRT$strcat(query, link);
-    MSVCRT$strcat(query, suffix);
+    MSVCRT$strncat(query, link, totalSize - MSVCRT$strlen(query) - 1);
+    MSVCRT$strncat(query, suffix, totalSize - MSVCRT$strlen(query) - 1);
 
     if (!HandleQuery(stmt, (SQLCHAR*)query, NULL, NULL, FALSE))
     {
-        return -1;
+        return FALSE;
     }
 
-    return MSVCRT$atoi(GetSingleResult(stmt, FALSE));
+    char* result = GetSingleResult(stmt, FALSE);
+    
+    if (result[0] == '1')
+    {
+        enabled = TRUE;
+    }
+    else
+    {
+        enabled = FALSE;
+    }
+
+    intFree(query);
+    intFree(result);
+
+    return enabled;
 }
 
 //
@@ -146,35 +180,57 @@ BOOL CheckModuleStatus(SQLHSTMT stmt, char* name, char* link, char* impersonate)
                    "WHERE name = '";
     char* suffix = "';";
 
-    char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(name) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+    size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(name) + MSVCRT$strlen(suffix) + 1;
+    char* query = (char*)intAlloc(totalSize * sizeof(char));
+    
     MSVCRT$strcpy(query, prefix);
-    MSVCRT$strcat(query, name);
-    MSVCRT$strcat(query, suffix);
+    MSVCRT$strncat(query, name, totalSize - MSVCRT$strlen(query) - 1);
+    MSVCRT$strncat(query, suffix, totalSize - MSVCRT$strlen(query) - 1);
 
-    return HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE);
+    BOOL result = HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE);
+
+    intFree(query);
+
+    return result;
 }
 
 //
-// Execute query and return an int
 // Used to verify module status before executing
-// 0 = disabled 1 = enabled -1 = error
 //
-int GetModuleStatus(SQLHSTMT stmt, char* name, char* link, char* impersonate)
+BOOL IsModuleEnabled(SQLHSTMT stmt, char* name, char* link, char* impersonate)
 {
+    BOOL enabled;
+
     char* prefix = "SELECT CAST(value_in_use AS INT) AS value_in_use "
                   "FROM sys.configurations "
                   "WHERE name = '";
     char* suffix = "';";
 
-    char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(name) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+    size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(name) + MSVCRT$strlen(suffix) + 1;
+    char* query = (char*)intAlloc(totalSize * sizeof(char));
+    
     MSVCRT$strcpy(query, prefix);
-    MSVCRT$strcat(query, name);
-    MSVCRT$strcat(query, suffix);
+    MSVCRT$strncat(query, name, totalSize - MSVCRT$strlen(query) - 1);
+    MSVCRT$strncat(query, suffix, totalSize - MSVCRT$strlen(query) - 1);
 
     if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE))
     {
-        return -1;
+        return FALSE;
     }
 
-    return MSVCRT$atoi(GetSingleResult(stmt, FALSE));
+    char* result = GetSingleResult(stmt, FALSE);
+    
+    if (result[0] == '1')
+    {
+        enabled = TRUE;
+    }
+    else
+    {
+        enabled = FALSE;
+    }
+
+    intFree(query);
+    intFree(result);
+
+    return enabled;
 }

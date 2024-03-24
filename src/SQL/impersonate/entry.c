@@ -8,6 +8,7 @@ void CheckImpersonate(char* server, char* database)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
+	SQLRETURN ret;
 
 
     SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
@@ -22,8 +23,12 @@ void CheckImpersonate(char* server, char* database)
 	//
 	// allocate statement handle
 	//
-	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
-
+	ret = ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	if (!SQL_SUCCEEDED(ret)) {
+		internal_printf("[!] Error allocating statement handle\n");
+		goto END;
+	}
+	
 	//
 	// Run the query
 	//

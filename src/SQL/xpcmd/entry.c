@@ -10,6 +10,9 @@ void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, c
     SQLHENV env			 = NULL;
     SQLHSTMT stmt 		 = NULL;
 	SQLHDBC dbc 		 = NULL;
+	char* query 		 = NULL;
+	size_t totalSize;
+	SQLRETURN ret;
 	unsigned int timeout = 10;
 
 
@@ -34,40 +37,38 @@ void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, c
 	//
 	// verify that xp_cmdshell is enabled
 	//
-	switch(GetModuleStatus(stmt, "xp_cmdshell", link, impersonate))
+	if (IsModuleEnabled(stmt, "xp_cmdshell", link, impersonate))
 	{
-		case 0:
-			internal_printf("[!] xp_cmdshell is not enabled\n");
-			goto END;
-		case 1:
-			internal_printf("[*] xp_cmdshell is enabled\n");
-			break;
-		case -1:
-			internal_printf("[!] Error checking xp_cmdshell status\n");
-			goto END;
+		internal_printf("[*] xp_cmdshell is enabled\n");
+	}
+	else
+	{
+		internal_printf("[!] xp_cmdshell is not enabled\n");
+		goto END;
 	}
 
 	//
 	// close the cursor
 	//
-	ODBC32$SQLCloseCursor(stmt);
+	ret = ODBC32$SQLCloseCursor(stmt);
+	if (!SQL_SUCCEEDED(ret)) {
+		internal_printf("[!] Failed to close cursor\n");
+		goto END;
+	}
 
 	//
 	// if using linked server, ensure rpc is enabled
 	//
 	if (link != NULL)
 	{
-		switch(GetRpcStatus(stmt, link))
+		if (IsRpcEnabled(stmt, link))
 		{
-			case 0:
-				internal_printf("[!] RPC out is not enabled on linked server\n");
-				goto END;
-			case 1:
-				internal_printf("[*] RPC out is enabled on linked server\n");
-				break;
-			case -1:
-				internal_printf("[!] Error checking RPC status on linked server\n");
-				goto END;
+			internal_printf("[*] RPC out is enabled\n");
+		}
+		else
+		{
+			internal_printf("[!] RPC out is not enabled\n");
+			goto END;
 		}
 		
 		//
@@ -79,7 +80,11 @@ void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, c
 	//
 	// don't want to hang beacons forever, so we'll try to set a timeout
 	//
-	ODBC32$SQLSetStmtAttr(stmt, SQL_ATTR_QUERY_TIMEOUT, (SQLPOINTER)(uintptr_t)timeout, 0);
+	ret = ODBC32$SQLSetStmtAttr(stmt, SQL_ATTR_QUERY_TIMEOUT, (SQLPOINTER)(uintptr_t)timeout, 0);
+	if (!SQL_SUCCEEDED(ret)) {
+		internal_printf("[!] Failed to set query timeout\n");
+		goto END;
+	}
 
 	internal_printf("[*] Executing system command...\n\n");
 
@@ -87,11 +92,13 @@ void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, c
 	{
 		char* prefix = "EXEC xp_cmdshell '";
 		char* suffix = "';";
-		char* query = (char*)intAlloc(MSVCRT$strlen(prefix) + MSVCRT$strlen(command) + MSVCRT$strlen(suffix) + 1);
+
+		totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(command) + MSVCRT$strlen(suffix) + 1;
+		query = (char*)intAlloc(totalSize * sizeof(char));
 
 		MSVCRT$strcpy(query, prefix);
-		MSVCRT$strcat(query, command);
-		MSVCRT$strcat(query, suffix);
+		MSVCRT$strncat(query, command,	totalSize - MSVCRT$strlen(query) - 1);
+		MSVCRT$strncat(query, suffix,	totalSize - MSVCRT$strlen(query) - 1);
 
 		//
 		// In case we're taking a hanging action, print current output
@@ -104,17 +111,20 @@ void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, c
 		if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE)){
 			goto END;
 		}
+
 		PrintQueryResults(stmt, TRUE);
 	}
 	else
 	{	
 		char* prefix = "SELECT 1; EXEC master..xp_cmdshell '";
 		char* suffix = "';";
-		char* query = (char*)intAlloc(MSVCRT$strlen(prefix) + MSVCRT$strlen(command) + MSVCRT$strlen(suffix) + 1);
+
+		totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(command) + MSVCRT$strlen(suffix) + 1;
+		query = (char*)intAlloc(totalSize * sizeof(char));
 
 		MSVCRT$strcpy(query, prefix);
-		MSVCRT$strcat(query, command);
-		MSVCRT$strcat(query, suffix);
+		MSVCRT$strncat(query, command,	totalSize - MSVCRT$strlen(query) - 1);
+		MSVCRT$strncat(query, suffix,	totalSize - MSVCRT$strlen(query) - 1);
 
 		//
 		// In case we're taking a hanging action, print current output
@@ -134,6 +144,7 @@ void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, c
 	
 
 END:
+	if (query != NULL) intFree(query);
 	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }

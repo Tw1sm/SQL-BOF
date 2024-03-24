@@ -9,6 +9,7 @@ void CheckTableColumns(char* server, char* database, char* link, char* impersona
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
 	SQLHDBC dbc 	= NULL;
+	SQLRETURN ret;
 
 
     if (link == NULL)
@@ -37,7 +38,11 @@ void CheckTableColumns(char* server, char* database, char* link, char* impersona
 	//
 	// allocate statement handle
 	//
-	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	ret = ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	if (!SQL_SUCCEEDED(ret)) {
+		internal_printf("[!] Error allocating statement handle\n");
+		goto END;
+	}
 
 	if (link == NULL)
 	{
@@ -47,12 +52,15 @@ void CheckTableColumns(char* server, char* database, char* link, char* impersona
 		//
 		char* dbPrefix = "USE ";
 		char* dbSuffix = ";";
-		char* useStmt = (char*)intAlloc((MSVCRT$strlen(dbPrefix) + MSVCRT$strlen(database) + MSVCRT$strlen(dbSuffix) + 1) * sizeof(char));
-		MSVCRT$strcpy(useStmt, dbPrefix);
-		MSVCRT$strcat(useStmt, database);
-		MSVCRT$strcat(useStmt, dbSuffix);
 
-		if (!HandleQuery(stmt, (SQLCHAR*)useStmt, link, impersonate, TRUE)){
+		size_t useStmtSize = MSVCRT$strlen(dbPrefix) + MSVCRT$strlen(database) + MSVCRT$strlen(dbSuffix) + 1;
+		char* useStmt = (char*)intAlloc(useStmtSize  * sizeof(char));
+
+		MSVCRT$strcpy(useStmt, dbPrefix);
+		MSVCRT$strncat(useStmt, database, useStmtSize - MSVCRT$strlen(useStmt) -1);
+		MSVCRT$strncat(useStmt, dbSuffix, useStmtSize - MSVCRT$strlen(useStmt) -1);
+
+		if (!HandleQuery(stmt, (SQLCHAR*)useStmt, link, impersonate, FALSE)){
 			goto END;
 		}
 
@@ -63,19 +71,23 @@ void CheckTableColumns(char* server, char* database, char* link, char* impersona
 							"WHERE TABLE_NAME = '";
 		char* tableSuffix = "' ORDER BY ORDINAL_POSITION;";
 		
-		char* query = (char*)intAlloc((MSVCRT$strlen(tablePrefix) + MSVCRT$strlen(table) + MSVCRT$strlen(tableSuffix) + 1) * sizeof(char));
+		size_t querySize = MSVCRT$strlen(tablePrefix) + MSVCRT$strlen(table) + MSVCRT$strlen(tableSuffix) + 1;
+		char* query = (char*)intAlloc(querySize * sizeof(char));
 		
-		MSVCRT$strcat(query, tablePrefix);
-		MSVCRT$strcat(query, table);
-		MSVCRT$strcat(query, tableSuffix);
+		MSVCRT$strcpy(query, tablePrefix);
+		MSVCRT$strncat(query, table, MSVCRT$strlen(query) -1);
+		MSVCRT$strncat(query, tableSuffix, MSVCRT$strlen(query) -1);
 
 		//
 		// Run the query
 		//
-		if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, TRUE)){
+		if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE)){
 			goto END;
 		}
 		PrintQueryResults(stmt, TRUE);
+
+		intFree(query);
+		intFree(useStmt);
 	}
 	else
 	{
@@ -87,21 +99,24 @@ void CheckTableColumns(char* server, char* database, char* link, char* impersona
 							"WHERE TABLE_NAME = '";
 		char* tableSuffix = "' ORDER BY ORDINAL_POSITION;";
 		
-		char* query = (char*)intAlloc((MSVCRT$strlen(dbPrefix) + MSVCRT$strlen(database) + MSVCRT$strlen(tablePrefix) + MSVCRT$strlen(table) + MSVCRT$strlen(tableSuffix) + 1) * sizeof(char));
+		size_t querySize = MSVCRT$strlen(dbPrefix) + MSVCRT$strlen(database) + MSVCRT$strlen(tablePrefix) + MSVCRT$strlen(table) + MSVCRT$strlen(tableSuffix) + 1;
+		char* query = (char*)intAlloc(querySize * sizeof(char));
 
 		MSVCRT$strcpy(query, dbPrefix);
-		MSVCRT$strcat(query, database);
-		MSVCRT$strcat(query, tablePrefix);
-		MSVCRT$strcat(query, table);
-		MSVCRT$strcat(query, tableSuffix);
+		MSVCRT$strncat(query, database, querySize - MSVCRT$strlen(query) -1);
+		MSVCRT$strncat(query, tablePrefix, querySize - MSVCRT$strlen(query) -1);
+		MSVCRT$strncat(query, table, querySize - MSVCRT$strlen(query) -1);
+		MSVCRT$strncat(query, tableSuffix, querySize - MSVCRT$strlen(query) -1);
 
 		//
 		// Run the query
 		//
-		if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, TRUE)){
+		if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE)){
 			goto END;
 		}
 		PrintQueryResults(stmt, TRUE);
+
+		intFree(query);
 	}
 
 END:

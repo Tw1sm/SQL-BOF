@@ -9,6 +9,10 @@ void CheckTableRows(char* server, char* database, char* link, char* impersonate,
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
 	SQLHDBC dbc 	= NULL;
+	char* useStmt	= NULL;
+	char* query		= NULL;
+	char* schema	= NULL;
+	SQLRETURN ret;
 
 
     if (link == NULL)
@@ -37,9 +41,12 @@ void CheckTableRows(char* server, char* database, char* link, char* impersonate,
 	//
 	// allocate statement handle
 	//
-	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
-
-	// TODO: use linked RPC query
+	ret = ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	if (!SQL_SUCCEEDED(ret))
+	{
+		internal_printf("[!] Error allocating statement handle\n");
+		goto END;
+	}
 
 	//
 	// Construct USE database statement
@@ -54,28 +61,30 @@ void CheckTableRows(char* server, char* database, char* link, char* impersonate,
 		//
 		// Not using link; need to execute two queries
 		//
-		char* useStmt = (char*)intAlloc((MSVCRT$strlen(dbPrefix) + MSVCRT$strlen(database) + MSVCRT$strlen(dbSuffix) + 1) * sizeof(char));
+		size_t useStmtSize = MSVCRT$strlen(dbPrefix) + MSVCRT$strlen(database) + MSVCRT$strlen(dbSuffix) + 1;
+		useStmt = (char*)intAlloc(useStmtSize * sizeof(char));
+
 		MSVCRT$strcpy(useStmt, dbPrefix);
-		MSVCRT$strcat(useStmt, database);
-		MSVCRT$strcat(useStmt, dbSuffix);
+		MSVCRT$strncat(useStmt, database, useStmtSize - MSVCRT$strlen(useStmt) - 1);
+		MSVCRT$strncat(useStmt, dbSuffix, useStmtSize - MSVCRT$strlen(useStmt) - 1);
 
 		if (!HandleQuery(stmt, (SQLCHAR*)useStmt, link, impersonate, TRUE)){
 			goto END;
 		}
 
 		//
-		// close the cursor
+		// leave cursor open
 		//
-		ODBC32$SQLCloseCursor(stmt);
 
 		//
 		// Construct query
 		//
-		char* query = (char*)intAlloc((MSVCRT$strlen(tablePrefix) + MSVCRT$strlen(table) + MSVCRT$strlen(tableSuffix) + 1) * sizeof(char));
+		size_t totalSize = MSVCRT$strlen(tablePrefix) + MSVCRT$strlen(table) + MSVCRT$strlen(tableSuffix) + 1;
+		query = (char*)intAlloc(totalSize * sizeof(char));
 		
 		MSVCRT$strcpy(query, tablePrefix);
-		MSVCRT$strcat(query, table);
-		MSVCRT$strcat(query, tableSuffix);
+		MSVCRT$strncat(query, table, totalSize - MSVCRT$strlen(query) - 1);
+		MSVCRT$strncat(query, tableSuffix, totalSize - MSVCRT$strlen(query) - 1);
 
 		//
 		// Run the query
@@ -83,6 +92,7 @@ void CheckTableRows(char* server, char* database, char* link, char* impersonate,
 		if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, TRUE)){
 			goto END;
 		}
+
 		PrintQueryResults(stmt, TRUE);
 	}
 	else
@@ -97,33 +107,44 @@ void CheckTableRows(char* server, char* database, char* link, char* impersonate,
 			goto END;
 		}
 
-		char* schema = GetSingleResult(stmt, FALSE);
+		schema = GetSingleResult(stmt, FALSE);
 		internal_printf("[*] Table schema for %s is: %s\n\n", table, schema);
 
 		//
 		// Close the cursor
 		//
-		ODBC32$SQLCloseCursor(stmt);
+		ret = ODBC32$SQLCloseCursor(stmt);
+		if (!SQL_SUCCEEDED(ret))
+		{
+			internal_printf("[!] Error closing cursor\n");
+			goto END;
+		}
 
 		//
 		// Prep statement for linked RPC query
 		// tableprefix + database + sep + schema + sep + table + suffix
 		//
-		char* query = (char*)intAlloc((MSVCRT$strlen(tablePrefix) + MSVCRT$strlen(database) + MSVCRT$strlen(sep) + MSVCRT$strlen(schema) + MSVCRT$strlen(sep) + MSVCRT$strlen(table) + MSVCRT$strlen(tableSuffix) + 1) * sizeof(char));
+		size_t totalSize = MSVCRT$strlen(tablePrefix) + MSVCRT$strlen(database) + MSVCRT$strlen(sep) + MSVCRT$strlen(schema) + MSVCRT$strlen(sep) + MSVCRT$strlen(table) + MSVCRT$strlen(tableSuffix) + 1;
+		query = (char*)intAlloc(totalSize * sizeof(char));
+
 		MSVCRT$strcpy(query, tablePrefix);
-		MSVCRT$strcat(query, database);
-		MSVCRT$strcat(query, sep);
-		MSVCRT$strcat(query, schema);
-		MSVCRT$strcat(query, sep);
-		MSVCRT$strcat(query, table);
+		MSVCRT$strncat(query, database,	totalSize - MSVCRT$strlen(query) - 1);
+		MSVCRT$strncat(query, sep,		totalSize - MSVCRT$strlen(query) - 1);
+		MSVCRT$strncat(query, schema,	totalSize - MSVCRT$strlen(query) - 1);
+		MSVCRT$strncat(query, sep,		totalSize - MSVCRT$strlen(query) - 1);
+		MSVCRT$strncat(query, table,	totalSize - MSVCRT$strlen(query) - 1);
 
 		if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, TRUE)){
 			goto END;
 		}
+
 		PrintQueryResults(stmt, TRUE);
 	}
 
 END:
+	if (useStmt != NULL) intFree(useStmt);
+	if (query != NULL) intFree(query);
+	if (schema != NULL) intFree(schema);
 	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }

@@ -53,7 +53,7 @@ BOOL ExecuteLQueryRpc(SQLHSTMT stmt, SQLCHAR* query, char* link)
         ptr++;
     }
 
-    char* editedQuery = (char*)MSVCRT$malloc((MSVCRT$strlen((char*)query) + count + 1) * sizeof(char));
+    char* editedQuery = (char*)intAlloc((MSVCRT$strlen((char*)query) + count + 1) * sizeof(char));
     char* newPtr = editedQuery;
     ptr = (char*)query;
 
@@ -73,14 +73,20 @@ BOOL ExecuteLQueryRpc(SQLHSTMT stmt, SQLCHAR* query, char* link)
     char* querySuffix = ";";
 
     // append prefix, query, suffix, link, querySuffix
-    char* lQuery = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen((char*)query) + MSVCRT$strlen(suffix) + MSVCRT$strlen(link) + MSVCRT$strlen(querySuffix) + 1) * sizeof(char));
+    size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen((char*)editedQuery) + MSVCRT$strlen(suffix) + MSVCRT$strlen(link) + MSVCRT$strlen(querySuffix) + 1;
+    char* lQuery = (char*)intAlloc(totalSize * sizeof(char));
     MSVCRT$strcpy(lQuery, prefix);
-    MSVCRT$strcat(lQuery, (char*)editedQuery);
-    MSVCRT$strcat(lQuery, suffix);
-    MSVCRT$strcat(lQuery, link);
-    MSVCRT$strcat(lQuery, querySuffix);
+    MSVCRT$strncat(lQuery, (char*)editedQuery, totalSize - MSVCRT$strlen(lQuery) - 1);
+    MSVCRT$strncat(lQuery, suffix, totalSize - MSVCRT$strlen(lQuery) - 1);
+    MSVCRT$strncat(lQuery, link, totalSize - MSVCRT$strlen(lQuery) - 1);
+    MSVCRT$strncat(lQuery, querySuffix, totalSize - MSVCRT$strlen(lQuery) - 1);
 
-    return ExecuteQuery(stmt, (SQLCHAR*)lQuery);
+    BOOL result = ExecuteQuery(stmt, (SQLCHAR*)lQuery);
+
+    intFree(editedQuery);
+    intFree(lQuery);
+
+    return result;
 }
 
 //
@@ -100,7 +106,7 @@ BOOL ExecuteLQuery(SQLHSTMT stmt, SQLCHAR* query, char* link)
         ptr++;
     }
 
-    char* editedQuery = (char*)MSVCRT$malloc((MSVCRT$strlen((char*)query) + count + 1) * sizeof(char));
+    char* editedQuery = (char*)intAlloc((MSVCRT$strlen((char*)query) + count + 1) * sizeof(char));
     char* newPtr = editedQuery;
     ptr = (char*)query;
 
@@ -120,14 +126,21 @@ BOOL ExecuteLQuery(SQLHSTMT stmt, SQLCHAR* query, char* link)
     char* querySuffix = "')";
 
     // append linkPrefix, link, linksuffix, query, querySuffix
-    char* lQuery = (char*)MSVCRT$malloc((MSVCRT$strlen(linkPrefix) + MSVCRT$strlen(link) + MSVCRT$strlen(linksuffix) + MSVCRT$strlen((char*)query) + MSVCRT$strlen(querySuffix) + 1) * sizeof(char));
+    size_t totalSize = MSVCRT$strlen(linkPrefix) + MSVCRT$strlen(link) + MSVCRT$strlen(linksuffix) + MSVCRT$strlen((char*)editedQuery) + MSVCRT$strlen(querySuffix) + 1;
+    char* lQuery = (char*)intAlloc(totalSize * sizeof(char));
+    
     MSVCRT$strcpy(lQuery, linkPrefix);
-    MSVCRT$strcat(lQuery, link);
-    MSVCRT$strcat(lQuery, linksuffix);
-    MSVCRT$strcat(lQuery, (char*)editedQuery);
-    MSVCRT$strcat(lQuery, querySuffix);
+    MSVCRT$strncat(lQuery, link, totalSize - MSVCRT$strlen(lQuery) - 1);
+    MSVCRT$strncat(lQuery, linksuffix, totalSize - MSVCRT$strlen(lQuery) - 1);
+    MSVCRT$strncat(lQuery, (char*)editedQuery, totalSize - MSVCRT$strlen(lQuery) - 1);
+    MSVCRT$strncat(lQuery, querySuffix, totalSize - MSVCRT$strlen(lQuery) - 1);
 
-    return ExecuteQuery(stmt, (SQLCHAR*)lQuery);
+    BOOL result = ExecuteQuery(stmt, (SQLCHAR*)lQuery);
+
+    intFree(editedQuery);
+    intFree(lQuery);
+    
+    return result;
 }
 
 //
@@ -139,13 +152,18 @@ BOOL ExecuteIQuery(SQLHSTMT stmt, SQLCHAR* query, char* impersonate)
     char* suffix = "'; ";
 
     // append prefix, impersonate, suffix and query
-    char* iQuery = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(impersonate) + MSVCRT$strlen(suffix) + MSVCRT$strlen((char*)query) + 1) * sizeof(char));
+    size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(impersonate) + MSVCRT$strlen(suffix) + MSVCRT$strlen((char*)query) + 1;
+    char* iQuery = (char*)intAlloc(totalSize * sizeof(char));
     MSVCRT$strcpy(iQuery, prefix);
-    MSVCRT$strcat(iQuery, impersonate);
-    MSVCRT$strcat(iQuery, suffix);
-    MSVCRT$strcat(iQuery, (char*)query);
+    MSVCRT$strncat(iQuery, impersonate, totalSize - MSVCRT$strlen(iQuery) - 1);
+    MSVCRT$strncat(iQuery, suffix, totalSize - MSVCRT$strlen(iQuery) - 1);
+    MSVCRT$strncat(iQuery, (char*)query, totalSize - MSVCRT$strlen(iQuery) - 1);
 
-    return ExecuteQuery(stmt, (SQLCHAR*)iQuery);
+    BOOL result = ExecuteQuery(stmt, (SQLCHAR*)iQuery);
+
+    intFree(iQuery);
+
+    return result;
 }
 
 //
@@ -187,14 +205,20 @@ BOOL GetTableShema(SQLHSTMT stmt, char* link, char* database, char* table)
     char* middle = ".INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '";
     char* suffix = "';";
 
-    char* query = (char*)MSVCRT$malloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(database) + MSVCRT$strlen(middle) + MSVCRT$strlen(table) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+    size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(database) + MSVCRT$strlen(middle) + MSVCRT$strlen(table) + MSVCRT$strlen(suffix) + 1;
+    char* query = (char*)intAlloc(totalSize * sizeof(char));
+    
     MSVCRT$strcpy(query, prefix);
-    MSVCRT$strcat(query, database);
-    MSVCRT$strcat(query, middle);
-    MSVCRT$strcat(query, table);
-    MSVCRT$strcat(query, suffix);
+    MSVCRT$strncat(query, database, totalSize - MSVCRT$strlen(query) - 1);
+    MSVCRT$strncat(query, middle,   totalSize - MSVCRT$strlen(query) - 1);
+    MSVCRT$strncat(query, table,    totalSize - MSVCRT$strlen(query) - 1);
+    MSVCRT$strncat(query, suffix,   totalSize - MSVCRT$strlen(query) - 1);
 
-    return ExecuteLQuery(stmt, (SQLCHAR*)query, link);
+    BOOL result = ExecuteLQuery(stmt, (SQLCHAR*)query, link);
+
+    intFree(query);
+
+    return result;
 }
 
 
@@ -247,7 +271,7 @@ BOOL UsingLinkAndImpersonate(char* link, char* impersonate)
 //
 char** GetMultipleResults(SQLHSTMT stmt, BOOL hasHeader)
 {
-    char** results = (char**)MSVCRT$malloc(1024 * sizeof(char*));
+    char** results = (char**)intAlloc(1024 * sizeof(char*));
     SQLCHAR buf[1024];
     SQLLEN indicator;
     int i = 0;
@@ -260,7 +284,7 @@ char** GetMultipleResults(SQLHSTMT stmt, BOOL hasHeader)
             i++;
             continue;
         }
-        results[i] = (char*)MSVCRT$malloc((MSVCRT$strlen((char*)buf) + 1) * sizeof(char));
+        results[i] = (char*)intAlloc((MSVCRT$strlen((char*)buf) + 1) * sizeof(char));
         MSVCRT$strcpy(results[i], (char*)buf);
         i++;
     }
@@ -273,7 +297,7 @@ char** GetMultipleResults(SQLHSTMT stmt, BOOL hasHeader)
 //
 char* GetSingleResult(SQLHSTMT stmt, BOOL hasHeader)
 {
-    SQLCHAR* buf = (SQLCHAR*)MSVCRT$malloc(1024 * sizeof(SQLCHAR));
+    SQLCHAR* buf = (SQLCHAR*)intAlloc(1024 * sizeof(SQLCHAR));
     SQLLEN indicator;
     SQLRETURN ret;
 

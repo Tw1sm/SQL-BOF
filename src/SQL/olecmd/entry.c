@@ -10,7 +10,9 @@ void ExecuteOleCmd(char* server, char* database, char* link, char* impersonate, 
     SQLHENV env			 = NULL;
     SQLHSTMT stmt 		 = NULL;
 	SQLHDBC dbc 		 = NULL;
+	SQLRETURN ret;
 	char* query;
+	size_t totalSize;
 
 
     if (link == NULL)
@@ -29,22 +31,24 @@ void ExecuteOleCmd(char* server, char* database, char* link, char* impersonate, 
 	//
 	// allocate statement handle
 	//
-	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	ret = ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	if (!SQL_SUCCEEDED(ret))
+	{
+		internal_printf("[!] Error allocating statement handle\n");
+		goto END;
+	}
 
 	//
 	// verify that OLE Automation Procedures is enabled
 	//
-	switch(GetModuleStatus(stmt, "OLE Automation Procedures", link, impersonate))
+	if (IsModuleEnabled(stmt, "OLE Automation Procedures", link, impersonate))
 	{
-		case 0:
-			internal_printf("[!] OLE Automation Procedures is not enabled\n");
-			goto END;
-		case 1:
-			internal_printf("[*] OLE Automation Procedures is enabled\n");
-			break;
-		case -1:
-			internal_printf("[!] Error checking OLE Automation Procedures status\n");
-			goto END;
+		internal_printf("[*] OLE Automation Procedures is enabled\n");
+	}
+	else
+	{
+		internal_printf("[!] OLE Automation Procedures is not enabled\n");
+		goto END;
 	}
 
 	//
@@ -57,19 +61,16 @@ void ExecuteOleCmd(char* server, char* database, char* link, char* impersonate, 
 	//
 	if (link != NULL)
 	{
-		switch(GetRpcStatus(stmt, link))
+		if (IsRpcEnabled(stmt, link))
 		{
-			case 0:
-				internal_printf("[!] RPC out is not enabled on linked server\n");
-				goto END;
-			case 1:
-				internal_printf("[*] RPC out is enabled on linked server\n");
-				break;
-			case -1:
-				internal_printf("[!] Error checking RPC status on linked server\n");
-				goto END;
+			internal_printf("[*] RPC out is enabled\n");
 		}
-		
+		else
+		{
+			internal_printf("[!] RPC out is not enabled\n");
+			goto END;
+		}
+				
 		//
 		// close the cursor
 		//
@@ -101,34 +102,36 @@ void ExecuteOleCmd(char* server, char* database, char* link, char* impersonate, 
 	//
 	if (link == NULL)
 	{
-		query = (char*)intAlloc(MSVCRT$strlen(part1) + MSVCRT$strlen(output) + MSVCRT$strlen(part2) + MSVCRT$strlen(program) + MSVCRT$strlen(part3) + MSVCRT$strlen(program) + MSVCRT$strlen(part4) + MSVCRT$strlen(command) + MSVCRT$strlen(part5) + MSVCRT$strlen(output) + MSVCRT$strlen(part6) + MSVCRT$strlen(output) + MSVCRT$strlen(part7) + MSVCRT$strlen(program) + MSVCRT$strlen(part8) + MSVCRT$strlen(output) + MSVCRT$strlen(part9) + 1);
+		totalSize = MSVCRT$strlen(part1) + MSVCRT$strlen(output) + MSVCRT$strlen(part2) + MSVCRT$strlen(program) + MSVCRT$strlen(part3) + MSVCRT$strlen(program) + MSVCRT$strlen(part4) + MSVCRT$strlen(command) + MSVCRT$strlen(part5) + MSVCRT$strlen(output) + MSVCRT$strlen(part6) + MSVCRT$strlen(output) + MSVCRT$strlen(part7) + MSVCRT$strlen(program) + MSVCRT$strlen(part8) + MSVCRT$strlen(output) + MSVCRT$strlen(part9) + 1;
+		query = (char*)intAlloc(totalSize * sizeof(char));
 		
 		MSVCRT$strcpy(query, part1);
 	}
 	else
 	{	
-		query = (char*)intAlloc(MSVCRT$strlen(linkPrefix) + MSVCRT$strlen(part1) + MSVCRT$strlen(output) + MSVCRT$strlen(part2) + MSVCRT$strlen(program) + MSVCRT$strlen(part3) + MSVCRT$strlen(program) + MSVCRT$strlen(part4) + MSVCRT$strlen(command) + MSVCRT$strlen(part5) + MSVCRT$strlen(output) + MSVCRT$strlen(part6) + MSVCRT$strlen(output) + MSVCRT$strlen(part7) + MSVCRT$strlen(program) + MSVCRT$strlen(part8) + MSVCRT$strlen(output) + MSVCRT$strlen(part9) + 1);
+		totalSize = MSVCRT$strlen(linkPrefix) + MSVCRT$strlen(part1) + MSVCRT$strlen(output) + MSVCRT$strlen(part2) + MSVCRT$strlen(program) + MSVCRT$strlen(part3) + MSVCRT$strlen(program) + MSVCRT$strlen(part4) + MSVCRT$strlen(command) + MSVCRT$strlen(part5) + MSVCRT$strlen(output) + MSVCRT$strlen(part6) + MSVCRT$strlen(output) + MSVCRT$strlen(part7) + MSVCRT$strlen(program) + MSVCRT$strlen(part8) + MSVCRT$strlen(output) + MSVCRT$strlen(part9) + 1;
+		query = (char*)intAlloc(totalSize * sizeof(char));
 
 		MSVCRT$strcpy(query, linkPrefix);
-		MSVCRT$strcat(query, part1);
+		MSVCRT$strncat(query, part1, totalSize - MSVCRT$strlen(query) - 1);
 	}
 
-	MSVCRT$strcat(query, output);
-	MSVCRT$strcat(query, part2);
-	MSVCRT$strcat(query, program);
-	MSVCRT$strcat(query, part3);
-	MSVCRT$strcat(query, program);
-	MSVCRT$strcat(query, part4);
-	MSVCRT$strcat(query, command);
-	MSVCRT$strcat(query, part5);
-	MSVCRT$strcat(query, output);
-	MSVCRT$strcat(query, part6);
-	MSVCRT$strcat(query, output);
-	MSVCRT$strcat(query, part7);
-	MSVCRT$strcat(query, program);
-	MSVCRT$strcat(query, part8);
-	MSVCRT$strcat(query, output);
-	MSVCRT$strcat(query, part9);
+	MSVCRT$strncat(query, output,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, part2,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, program,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, part3,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, program,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, part4,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, command,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, part5,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, output,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, part6,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, output,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, part7,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, program,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, part8,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, output,	totalSize - MSVCRT$strlen(query) - 1);
+	MSVCRT$strncat(query, part9,	totalSize - MSVCRT$strlen(query) - 1);
 
 
 	//
@@ -142,6 +145,10 @@ void ExecuteOleCmd(char* server, char* database, char* link, char* impersonate, 
 	internal_printf("[*] Destoryed \"%s\" and \"%s\"\n", output, program);
 
 END:
+	if (output != NULL) intFree(output);
+	if (program != NULL) intFree(program);
+	if (query != NULL) intFree(query);
+
 	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }

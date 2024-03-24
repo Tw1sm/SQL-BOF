@@ -40,6 +40,8 @@ WINBASEAPI int __cdecl MSVCRT$sprintf(char *__stream, const char *__format, ...)
 DECLSPEC_IMPORT char * __cdecl MSVCRT$strcat(char * __restrict__ _Dest,const char * __restrict__ _Source);
 DECLSPEC_IMPORT int __cdecl MSVCRT$strcmp(const char *_Str1,const char *_Str2);
 WINBASEAPI size_t __cdecl MSVCRT$strlen(const char *_Str);
+DECLSPEC_IMPORT char * __cdecl MSVCRT$strncat(char * __restrict__ _Dest,const char * __restrict__ _Source,size_t _Count);
+DECLSPEC_IMPORT char * __cdecl MSVCRT$strncpy(char * __restrict__ _Dest,const char * __restrict__ _Source,size_t _Count);
 WINBASEAPI time_t __cdecl MSVCRT$time(time_t *_Time);
 WINBASEAPI int __cdecl MSVCRT$vsnprintf(char * __restrict__ d,size_t n,const char * __restrict__ format,va_list arg);
 DECLSPEC_IMPORT char * __cdecl MSVCRT$strcpy(char * __restrict__ __dst, const char * __restrict__ __src);
@@ -86,6 +88,8 @@ WINBASEAPI SQLRETURN ODBC32$SQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER 
 #define MSVCRT$strcat strcat
 #define MSVCRT$strcmp strcmp
 #define MSVCRT$strlen strlen
+#define MSVCRT$strncat strncat
+#define MSVCRT$strncpy strncpy
 #define MSVCRT$time time
 #define MSVCRT$vsnprintf vsnprintf
 #define MSVCRT$strcpy strcpy
