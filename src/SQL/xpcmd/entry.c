@@ -32,7 +32,11 @@ void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, c
 	//
 	// allocate statement handle
 	//
-	ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	ret = ODBC32$SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	if (!SQL_SUCCEEDED(ret)) {
+		internal_printf("[!] Failed to allocate statement handle\n");
+		goto END;
+	}
 
 	//
 	// verify that xp_cmdshell is enabled
