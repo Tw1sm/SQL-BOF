@@ -7,6 +7,8 @@ Load the aggressor script located at `SQL/SQL.cna`.
 ## Available commands
 |Commands|Usage|Notes|
 |--------|-----|-----|
+|sql-agentcmd |[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate] |Execute a system command using agent jobs |
+|sql-agentstatus |[server] [opt: database] [opt: linkedserver] [opt: impersonate] |Enumerate SQL agent status and jobs |
 |sql-checkrpc |[server] [opt: database] [opt: linkedserver] [opt: impersonate] |Enumerate RPC status of linked servers |
 |sql-clr |[server] [dll_path] [function] [opt: database] [opt: linkedserver] [opt: impersonate] |Load and execute .NET assembly in a stored procedure |
 |sql-columns |[server] [table] [opt: database] [opt: linkedserver] [opt: impersonate] |Enumerate columns within a table |
