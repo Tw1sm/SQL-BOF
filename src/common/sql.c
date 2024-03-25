@@ -304,14 +304,14 @@ char* GetSingleResult(SQLHSTMT stmt, BOOL hasHeader)
     ret = ODBC32$SQLFetch(stmt);
     if (!SQL_SUCCEEDED(ret))
     {
-        internal_printf("Error fetching results.\n");
+        internal_printf("[!] Error fetching results\n");
         return NULL;
     }
 
     ret = ODBC32$SQLGetData(stmt, 1, SQL_C_CHAR, buf, 1024, &indicator);
     if (!SQL_SUCCEEDED(ret))
     {
-        internal_printf("Error retrieving data.\n");
+        internal_printf("[!] Error retrieving data\n");
         return NULL;
     }
 
@@ -320,14 +320,14 @@ char* GetSingleResult(SQLHSTMT stmt, BOOL hasHeader)
         ret = ODBC32$SQLFetch(stmt);
         if (!SQL_SUCCEEDED(ret))
         {
-            internal_printf("Error fetching results.\n");
+            internal_printf("[!] Error fetching results\n");
             return NULL;
         }
 
         ret = ODBC32$SQLGetData(stmt, 1, SQL_C_CHAR, buf, 1024, &indicator);
         if (!SQL_SUCCEEDED(ret))
         {
-            internal_printf("Error retrieving data.\n");
+            internal_printf("[!] Error retrieving data\n");
             return NULL;
         }
     }
@@ -346,7 +346,7 @@ BOOL PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader)
     ret = ODBC32$SQLNumResultCols(stmt, &columns);
     if (!SQL_SUCCEEDED(ret))
     {
-        internal_printf("Error retrieving column count.\n");
+        internal_printf("Error retrieving column count\n");
         return FALSE;
     }
 

@@ -88,6 +88,7 @@ BOOL ToggleModule(SQLHSTMT stmt, char* name, char* value, char* link, char* impe
 
         if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, TRUE))
         {
+            intFree(query);
             return FALSE;
         }
 
@@ -149,6 +150,7 @@ BOOL IsRpcEnabled(SQLHSTMT stmt, char* link)
 
     if (!HandleQuery(stmt, (SQLCHAR*)query, NULL, NULL, FALSE))
     {
+        intFree(query);
         return FALSE;
     }
 
