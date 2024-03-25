@@ -585,8 +585,9 @@ alias sql-xpcmd {
 
 beacon_command_register(
 	"sql-xpcmd", 
-	"Execute a system command using xp_cmdshell. Output returned unless using a linked server. WARNING: running a persistent command will cause the beacon to hang", 
-	"sql-xpcmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]"
+	"Execute a system command using xp_cmdshell", 
+	"sql-xpcmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]\n\n" .
+	"Output returned unless using a linked server. WARNING: running a persistent command will cause the beacon to hang"
 );
 
 alias sql-olecmd {
@@ -612,8 +613,9 @@ alias sql-olecmd {
 
 beacon_command_register(
 	"sql-olecmd", 
-	"Execute a system command using OLE automation procedures. Output is not returned", 
-	"sql-olecmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]"
+	"Execute a system command using OLE automation procedures", 
+	"sql-olecmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]\n\n" .
+	" Output is not returned"
 );
 
 alias sql-clr {
@@ -692,8 +694,9 @@ alias sql-agentcmd {
 
 beacon_command_register(
 	"sql-agentcmd", 
-	"Execute a system command using agent jobs. Output is not returned", 
-	"sql-agentcmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]"
+	"Execute a system command using agent jobs", 
+	"sql-agentcmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]\n\n" .
+	" Output is not returned"
 );
 
 alias sql-agentstatus {
