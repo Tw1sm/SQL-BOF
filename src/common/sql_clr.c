@@ -37,6 +37,11 @@ BOOL AssemblyHashExists(SQLHSTMT stmt, char* hash, char* link, char* impersonate
     {
         exists = TRUE;
     }
+    else
+    {
+        internal_printf("[*] Assembly hash does not exist (error fetching result normal)\n");
+    }
+    
     // print exists
     intFree(query);
     intFree(resultHash);

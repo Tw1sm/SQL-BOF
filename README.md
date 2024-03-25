@@ -2,12 +2,13 @@
 A library of beacon object files to interact with remote SQL servers and data. This collection is templated off the TrustedSec [CS-Situational-Awareness-BOF](https://github.com/trustedsec/CS-Situational-Awareness-BOF) collection and models the functionality of the [SQLRecon](https://github.com/skahwah/SQLRecon) project.
 
 ## Usage
-Load the aggressor script located at `SQL/SQL.cna`
+Load the aggressor script located at `SQL/SQL.cna`.
 
 ## Available commands
 |Commands|Usage|Notes|
 |--------|-----|-----|
 |sql-checkrpc |[server] [opt: database] [opt: linkedserver] [opt: impersonate] |Enumerate RPC status of linked servers |
+|sql-clr |[server] [dll_path] [function] [opt: database] [opt: linkedserver] [opt: impersonate] |Load and execute .NET assembly in a stored procedure |
 |sql-columns |[server] [table] [opt: database] [opt: linkedserver] [opt: impersonate] |Enumerate columns within a table |
 |sql-databases |[server] [opt: database] [opt: linkedserver] [opt: impersonate] |Enumerate databases on a server|
 |sql-disableclr |[server] [opt: database] [opt: linkedserver] [opt: impersonate] |Disable CLR integration |
