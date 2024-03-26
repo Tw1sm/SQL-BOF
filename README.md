@@ -7,6 +7,7 @@ Load the aggressor script located at `SQL/SQL.cna`.
 ## Available commands
 |Commands|Usage|Notes|
 |--------|-----|-----|
+|sql-adsi|[server] [ADSI_linkedserver] [opt: port] [opt: database] [opt: linkedserver] [opt: impersonate] |Obtain ADSI creds from ADSI linked server |
 |sql-agentcmd |[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate] |Execute a system command using agent jobs |
 |sql-agentstatus |[server] [opt: database] [opt: linkedserver] [opt: impersonate] |Enumerate SQL agent status and jobs |
 |sql-checkrpc |[server] [opt: database] [opt: linkedserver] [opt: impersonate] |Enumerate RPC status of linked servers |
@@ -33,7 +34,6 @@ Load the aggressor script located at `SQL/SQL.cna`.
 |sql-users |[server] [opt: database] [opt: linkedserver] [opt: impersonate] |Enumerate users with database access |
 |sql-whoami |[server] [opt: database] [opt: linkedserver] [opt: impersonate] |Gather logged in user, mapped user and roles |
 |sql-xpcmd |[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate] |Execute a system command via xp_cmdshell |
-
 
 ## References
 - [SQLRecon](https://github.com/skahwah/SQLRecon) by [@sanjivkawa](https://twitter.com/sanjivkawa)

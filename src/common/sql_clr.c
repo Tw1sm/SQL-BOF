@@ -6,7 +6,6 @@
 #include <sql.h>
 #include "bofdefs.h"
 
-
 BOOL AssemblyHashExists(SQLHSTMT stmt, char* hash, char* link, char* impersonate)
 {
     BOOL exists = FALSE;
@@ -42,7 +41,6 @@ BOOL AssemblyHashExists(SQLHSTMT stmt, char* hash, char* link, char* impersonate
         internal_printf("[*] Assembly hash does not exist (error fetching result normal)\n");
     }
     
-    // print exists
     intFree(query);
     intFree(resultHash);
     return exists;
@@ -258,15 +256,31 @@ BOOL CreateAssemblyStoredProc(SQLHSTMT stmt, char* assemblyName, char* function,
 
     if (Adsi)
     {
-        //TODO
-        internal_printf("[-] ADSI not implemented yet\n");
+        //
+        // for ADSI BOF
+        //
+        char* prefix    = "CREATE FUNCTION [dbo].";
+        char* part2     = "(@port int) RETURNS NVARCHAR(MAX) AS EXTERNAL NAME ";
+        char* suffix    = ".[ldapAssembly.LdapSrv].listen;";
+
+        size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(function) + MSVCRT$strlen(part2) + MSVCRT$strlen(assemblyName) + MSVCRT$strlen(suffix) + 1;
+        query = (char*)intAlloc(totalSize * sizeof(char));
+
+        MSVCRT$strcpy(query, prefix);
+        MSVCRT$strncat(query, function,     totalSize - MSVCRT$strlen(query) - 1);
+        MSVCRT$strncat(query, part2,        totalSize - MSVCRT$strlen(query) - 1);
+        MSVCRT$strncat(query, assemblyName, totalSize - MSVCRT$strlen(query) - 1);
+        MSVCRT$strncat(query, suffix,       totalSize - MSVCRT$strlen(query) - 1);
     }
     else
     {
-        char* prefix = "CREATE PROCEDURE [dbo].[";
-        char* part2 = "] AS EXTERNAL NAME [";
-        char* part3 = "].[StoredProcedures].[";
-        char* suffix = "];";
+        //
+        // for CLR BOF
+        //
+        char* prefix    = "CREATE PROCEDURE [dbo].[";
+        char* part2     = "] AS EXTERNAL NAME [";
+        char* part3     = "].[StoredProcedures].[";
+        char* suffix    = "];";
 
         size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(function) + MSVCRT$strlen(part2) + MSVCRT$strlen(assemblyName) + MSVCRT$strlen(part3) + MSVCRT$strlen(function) + MSVCRT$strlen(suffix) + 1;
         query = (char*)intAlloc(totalSize * sizeof(char));

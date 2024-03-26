@@ -20,6 +20,7 @@
 #ifdef BOF
 
 // KERNEL32
+WINBASEAPI HANDLE WINAPI KERNEL32$CreateThread (LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId);
 WINBASEAPI int WINAPI Kernel32$WideCharToMultiByte (UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCCH lpDefaultChar, LPBOOL lpUsedDefaultChar);
 WINBASEAPI BOOL WINAPI KERNEL32$HeapFree (HANDLE, DWORD, PVOID);
 WINBASEAPI HANDLE WINAPI KERNEL32$GetProcessHeap();
@@ -70,6 +71,7 @@ WINBASEAPI SQLRETURN ODBC32$SQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER 
 
 
 // KERNEL32
+#define KERNEL32$CreateThread CreateThread
 #define Kernel32$WideCharToMultiByte  WideCharToMultiByte 
 #define KERNEL32$HeapFree  HeapFree 
 #define KERNEL32$GetProcessHeap GetProcessHeap
