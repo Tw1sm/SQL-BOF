@@ -735,7 +735,7 @@ alias sql-adsi {
 	}
 	$barch  = barch($1);
 	$server = $2;
-	$adsiserver = $3
+	$adsiserver = $3;
 	$port = iff(-istrue $4, $4, "4444");
 	$database = iff(-istrue $5, $5, "");
     $link = iff(-istrue $6, $6, "");
