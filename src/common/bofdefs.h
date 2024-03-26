@@ -20,11 +20,13 @@
 #ifdef BOF
 
 // KERNEL32
+WINBASEAPI BOOL WINAPI KERNEL32$CloseHandle(HANDLE hObject);
 WINBASEAPI HANDLE WINAPI KERNEL32$CreateThread (LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId);
 WINBASEAPI int WINAPI Kernel32$WideCharToMultiByte (UINT CodePage, DWORD dwFlags, LPCWCH lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCCH lpDefaultChar, LPBOOL lpUsedDefaultChar);
 WINBASEAPI BOOL WINAPI KERNEL32$HeapFree (HANDLE, DWORD, PVOID);
 WINBASEAPI HANDLE WINAPI KERNEL32$GetProcessHeap();
 WINBASEAPI void * WINAPI KERNEL32$HeapAlloc (HANDLE hHeap, DWORD dwFlags, SIZE_T dwBytes);
+WINBASEAPI DWORD WINAPI KERNEL32$WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds);
 
 
 #define intAlloc(size) KERNEL32$HeapAlloc(KERNEL32$GetProcessHeap(), HEAP_ZERO_MEMORY, size)
@@ -71,12 +73,13 @@ WINBASEAPI SQLRETURN ODBC32$SQLSetStmtAttr(SQLHSTMT StatementHandle, SQLINTEGER 
 
 
 // KERNEL32
+#define KERNEL32$CloseHandle CloseHandle
 #define KERNEL32$CreateThread CreateThread
 #define Kernel32$WideCharToMultiByte  WideCharToMultiByte 
 #define KERNEL32$HeapFree  HeapFree 
 #define KERNEL32$GetProcessHeap GetProcessHeap
 #define KERNEL32$HeapAlloc HeapAlloc
-
+#define KERNEL32$WaitForSingleObject WaitForSingleObject
 
 
 // MSVCRT

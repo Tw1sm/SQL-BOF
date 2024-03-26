@@ -296,6 +296,7 @@ void DumpAdsiCreds(char* server, char* database, char* link, char* impersonate, 
 	// Trigger auth
 	//
 	internal_printf("[*] Executing LDAP solication (this will fire some errors)...\n\n");
+	printoutput(FALSE);
 
 	if (link == NULL)
 	{
@@ -339,8 +340,8 @@ void DumpAdsiCreds(char* server, char* database, char* link, char* impersonate, 
 	//
 	// Wait for the thread to finish
 	//
-	WaitForSingleObject(hThread, INFINITE);
-	CloseHandle(hThread);
+	KERNEL32$WaitForSingleObject(hThread, INFINITE);
+	KERNEL32$CloseHandle(hThread);
 
 	internal_printf("\n[*] LDAP server thread finished\n\n");
 	PrintQueryResults(stmt2, TRUE);
