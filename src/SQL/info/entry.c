@@ -64,6 +64,7 @@ void GetSQLInfo(char* server, char* database) {
 	SQLHSTMT stmt 	= NULL;
 	SQLRETURN ret;
 	SQLINFO info;
+	memset(&info, 0, sizeof(SQLINFO));
 	
 	SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
 
