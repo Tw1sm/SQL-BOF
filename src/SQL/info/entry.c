@@ -10,19 +10,19 @@ typedef struct SQLINFO {
 	char* 	ServiceName;
 	char* 	ServiceAccount;
 	char*	AuthenticationMode;
-    char*	ForcedEncryption;
-    char*	Clustered;
-    char*	SqlServerVersionNumber;
-    char*	SqlServerMajorVersion;
-    char*	SqlServerEdition;
-    char*	SqlServerServicePack;
-    char*	OsArchitecture;
-    char*	OsMachineType;
-    char*	OsVersion;
-    char*	OsVersionNumber;
-    char*	CurrentLogin;
-    BOOL	IsSysAdmin;
-    char*	ActiveSessions;
+	char*	ForcedEncryption;
+	char*	Clustered;
+	char*	SqlServerVersionNumber;
+	char*	SqlServerMajorVersion;
+	char*	SqlServerEdition;
+	char*	SqlServerServicePack;
+	char*	OsArchitecture;
+	char*	OsMachineType;
+	char*	OsVersion;
+	char*	OsVersionNumber;
+	char*	CurrentLogin;
+	BOOL	IsSysAdmin;
+	char*	ActiveSessions;
 } SQLINFO;
 
 void FreeAttr(char* attr) {
@@ -38,7 +38,7 @@ void FreeSqlInfo(SQLINFO* info) {
         return;
     }
 
-    FreeAttr(info->ComputerName);
+	FreeAttr(info->ComputerName);
 	FreeAttr(info->DomainName);
 	FreeAttr(info->ServicePid);
 	FreeAttr(info->ServiceName);
@@ -60,14 +60,14 @@ void FreeSqlInfo(SQLINFO* info) {
 
 
 void GetSQLInfo(char* server, char* database) {
-    SQLHENV env		= NULL;
-    SQLHSTMT stmt 	= NULL;
+	SQLHENV env		= NULL;
+	SQLHSTMT stmt 	= NULL;
 	SQLRETURN ret;
 	SQLINFO info;
 	
-    SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
+	SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
 
-    if (dbc == NULL)
+	if (dbc == NULL)
 	{
 		goto END;
 	}
