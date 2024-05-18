@@ -8,11 +8,14 @@
 //
 void ShowError(unsigned int handletype, const SQLHANDLE* handle)
 {
-    SQLCHAR sqlstate[1024];
-    SQLCHAR message[1024];
-    if (SQL_SUCCESS == ODBC32$SQLGetDiagRec(handletype, (SQLHANDLE)handle, 1, sqlstate, NULL, message, 1024, NULL))
+    SQLCHAR sqlstate[6];
+    SQLCHAR messageText[SQL_MAX_MESSAGE_LENGTH];
+    SQLINTEGER nativeError;
+    SQLSMALLINT textLength;
+
+    if (SQL_SUCCESS == ODBC32$SQLGetDiagRec(handletype, (SQLHANDLE)handle, 1, sqlstate, &nativeError, messageText, sizeof(messageText), &textLength))    
     {
-        internal_printf("[-] Message: %s \n[-] SQL State: %s\n", message, sqlstate);
+        internal_printf("[-] SQL State: %s, NativeError: %d, Message: %s\n", sqlstate, nativeError, messageText);
     }
 }
 
@@ -404,7 +407,7 @@ BOOL PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader)
 SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
 {
     SQLRETURN ret;
-    SQLCHAR connstr[1024];
+    char* connstr;
     SQLHDBC dbc = NULL;
 
     //
@@ -440,29 +443,45 @@ SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
     //
     // dbName may be NULL when a linked server is used
     //
+    char* prefix = "DRIVER={SQL Server};SERVER=";
+    char* middle = ";DATABASE=";
+    char* suffix = ";Trusted_Connection=Yes;";
     if (dbName == NULL)
     {
-        MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;Trusted_Connection=Yes;", server);
+        size_t connstrSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(server) + MSVCRT$strlen(suffix) + 1;
+        connstr = (char*)intAlloc(connstrSize * sizeof(char));
+
+        MSVCRT$strcpy(connstr, prefix);
+        MSVCRT$strncat(connstr, server, connstrSize - MSVCRT$strlen(connstr) - 1);
+        MSVCRT$strncat(connstr, suffix, connstrSize - MSVCRT$strlen(connstr) - 1);
     }
     else
-    {
-        MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;DATABASE=%s;Trusted_Connection=Yes;", server, dbName);
+    {   
+        size_t connstrSize = MSVCRT$strlen(prefix) + MSVCRT$strlen(server) + MSVCRT$strlen(middle) + MSVCRT$strlen(dbName) + MSVCRT$strlen(suffix) + 1;
+        connstr = (char*)intAlloc(connstrSize * sizeof(char));
+
+        MSVCRT$strcpy(connstr, prefix);
+        MSVCRT$strncat(connstr, server, connstrSize - MSVCRT$strlen(connstr) - 1);
+        MSVCRT$strncat(connstr, middle, connstrSize - MSVCRT$strlen(connstr) - 1);
+        MSVCRT$strncat(connstr, dbName, connstrSize - MSVCRT$strlen(connstr) - 1);
+        MSVCRT$strncat(connstr, suffix, connstrSize - MSVCRT$strlen(connstr) - 1);
     }
     
-
     //
     // connect to the sql server
     //
     internal_printf("[*] Connecting to %s:1433\n", server);
-    ret = ODBC32$SQLDriverConnect(dbc, NULL, connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_COMPLETE);
+    ret = ODBC32$SQLDriverConnect(dbc, NULL, (SQLCHAR*)connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
     if (!SQL_SUCCEEDED(ret))
     {
         internal_printf("[-] Error connecting to database\n");
         ShowError(SQL_HANDLE_DBC, dbc);
+        intFree(connstr);
         return NULL;
     }
     
     internal_printf("[+] Successfully connected to database\n");
+    intFree(connstr);
     return dbc;
 }
 
