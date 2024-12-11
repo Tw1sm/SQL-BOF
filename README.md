@@ -4,8 +4,6 @@ A library of beacon object files to interact with remote SQL servers and data. T
 ## Usage
 Load the aggressor script located at `SQL/SQL.cna`. 
 
-⚠️ Use x64 BOFs only, issue with x86 BOFs tracked [here](https://github.com/Tw1sm/SQL-BOF/issues/1) ⚠️
-
 ## Available commands
 |Commands|Usage|Notes|
 |--------|-----|-----|
