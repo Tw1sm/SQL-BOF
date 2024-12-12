@@ -11,6 +11,7 @@ Load the python script located at `SQL/SQL.py`
 ## Available commands
 |Commands|Usage|Notes|
 |--------|-----|-----|
+|sql-1434udp|[server IP] |Enumerate SQL Server connection information from the SQL Server Browser service (1434/UDP) |
 |sql-adsi|[server] [ADSI_linkedserver] [opt: port] [opt: database] [opt: linkedserver] [opt: impersonate] |Obtain ADSI creds from ADSI linked server |
 |sql-agentcmd |[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate] |Execute a system command using agent jobs |
 |sql-agentstatus |[server] [opt: database] [opt: linkedserver] [opt: impersonate] |Enumerate SQL agent status and jobs |

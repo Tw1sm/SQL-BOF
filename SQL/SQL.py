@@ -314,11 +314,49 @@ def adsi_parse_params( demon, params ):
     packer.addstr(port)
 
     return packer.getbuffer()
+
+
+def enum1434_parse_params( demon, params ):
+    packer = Packer()
+
+    num_params = len(params)
+    
+    server = ""
+
+    if num_params > 1:
+        demon.ConsoleWrite( demon.CONSOLE_ERROR, "Too many parameters" )
+        return None
+
+    if num_params < 1:
+        demon.ConsoleWrite( demon.CONSOLE_ERROR, "Too few parameters" )
+        return None
+
+    server = params[ 0 ]
+
+    packer.addstr(server)
+
+    return packer.getbuffer()
     
 
 ######
 # Funcs for commands
 ######
+
+def enum1434( demonID, *params ):
+    TaskID : str    = None
+    demon  : Demon  = None
+    demon  = Demon( demonID )
+
+    packed_params = enum1434_parse_params( demon, params )
+    if packed_params is None:
+        return False
+
+    TaskID = demon.ConsoleWrite( demon.CONSOLE_TASK, "Tasked demon to obtain SQL Server connection information" )
+
+    demon.InlineExecute( TaskID, "go", f"1434udp/1434udp.{demon.ProcessArch}.o", packed_params, False )
+
+    return TaskID
+
 
 def adsi( demonID, *params ):
     TaskID : str    = None
@@ -750,6 +788,7 @@ def xpcmd( demonID, *params ):
     return TaskID
 
 
+RegisterCommand( enum1434,      "", "sql-1434udp",      "Obtain SQL Server connection information from 1434/UDP",   0, "[server IP]",                                                                                       "" )
 RegisterCommand( adsi,          "", "sql-adsi",         "Obtain ADSI creds from ADSI linked server",                0, "[server] [ADSI_linkedserver] [opt: port] [opt: database] [opt: linkedserver] [opt: impersonate]",   "" )
 RegisterCommand( agentcmd,      "", "sql-agentcmd",     "Execute a system command using agent jobs",                0, "[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]",                         "" )
 RegisterCommand( agentstatus,   "", "sql-agentstatus",  "Enumerate SQL agent status and jobs",                      0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )

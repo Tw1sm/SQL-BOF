@@ -753,3 +753,27 @@ beacon_command_register(
 	"sql-adsi [server] [ADSI_linkedserver] [opt: port] [opt: database] [opt: linkedserver] [opt: impersonate]\n\n" .
 	"Port defaults to 4444. This gets opened on the SQL Server with the ADSI link, not the beaconing host"
 );
+
+alias sql-1434udp {
+    local('$args $barch $server');
+	
+	if(size(@_) < 2)
+	{
+		berror($1, beacon_command_detail("sql-1434udp"));
+		return;
+	}
+	$barch  = barch($1);
+	$server = $2;
+    
+	btask($1, "Tasked beacon to get SQL Server connection info from " . $server);
+	
+	$args = bof_pack($1, "z", $server);
+	beacon_inline_execute($1, readbof($1, "1434udp"), "go", $args);
+}
+
+beacon_command_register(
+	"sql-1434udp", 
+	"Obtain SQL Server connection information from the SQL Server Browser service (1434/UDP)", 
+	"sql-1434udp [server IP]\n\n" .
+	"Must provide an IP; hostnames are not accepted"
+);
