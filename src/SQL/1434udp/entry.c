@@ -78,7 +78,7 @@ void UdpEnumInfo(char* serverIp)
 			response[responseIndex++] = recvBuffer[i];
 		}
 	}
-    response[bytesReceived] = '\0';
+    response[responseIndex] = '\0';
 
 	if (response != NULL) {
         internal_printf("SQL Server Connection Info:\n\n%s\n", response);
