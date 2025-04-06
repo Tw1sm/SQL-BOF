@@ -641,7 +641,13 @@ alias sql-clr {
         return;
     }
 
-	$execute = exec("sha512sum " . $dllpath);
+	if ("Windows*" iswm systemProperties()["os.name"]) {
+		$execute = exec("powershell -c \"\(Get-FileHash -Algorithm SHA512 -Path $dllpath\).Hash\"");
+	}
+	else {
+		$execute = exec("sha512sum " . $dllpath);
+	}
+	
 	$return = wait($execute);
 	
 	if ($return != 0)
