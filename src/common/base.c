@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "bofdefs.h"
 #include "beacon.h"
 #include "time.h"

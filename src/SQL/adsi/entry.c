@@ -1,4 +1,3 @@
-#include <windows.h>
 #include <pthread.h>
 #include "bofdefs.h"
 #include "ldapserver.h"

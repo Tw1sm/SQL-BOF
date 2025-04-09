@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "bofdefs.h"
 #include "sql.h"
 
