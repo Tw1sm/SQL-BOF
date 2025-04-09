@@ -69,8 +69,8 @@ BOOL ExecuteLQueryRpc(SQLHSTMT stmt, SQLCHAR* query, char* link)
     *newPtr = '\0';
 
     char* prefix = "EXECUTE ('";
-    char* suffix = "') AT ";
-    char* querySuffix = ";";
+    char* suffix = "') AT [";
+    char* querySuffix = "];";
 
     // append prefix, query, suffix, link, querySuffix
     size_t totalSize = MSVCRT$strlen(prefix) + MSVCRT$strlen((char*)editedQuery) + MSVCRT$strlen(suffix) + MSVCRT$strlen(link) + MSVCRT$strlen(querySuffix) + 1;
