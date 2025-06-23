@@ -153,7 +153,10 @@ void ExecuteClrAssembly(char* server, char* database, char* link, char* imperson
 	// Create the custom assembly
 	//
 	internal_printf("[*] Creating a new custom assembly with the name \"%s\"\n", assemblyName);
-	CreateAssembly(stmt, assemblyName, hexBytes, link, impersonate);
+	if(!CreateAssembly(stmt, assemblyName, hexBytes, link, impersonate)) {
+		internal_printf("[!] Failed to create custom assembly. This probably happened as the assembly was uploaded before using a different name. See SQL error message\n");
+		goto END;
+	}
 	
 	//
 	// Verify that the assembly exists before we continue
