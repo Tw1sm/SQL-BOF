@@ -454,7 +454,7 @@ SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
     // connect to the sql server
     //
     internal_printf("[*] Connecting to %s:1433\n", server);
-    ret = ODBC32$SQLDriverConnect(dbc, NULL, connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_COMPLETE);
+    ret = ODBC32$SQLDriverConnect(dbc, NULL, connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
     if (!SQL_SUCCEEDED(ret))
     {
         internal_printf("[-] Error connecting to database\n");
