@@ -14,7 +14,26 @@ class SQLBOFTask():
             "server",
         )
 
+        self.add_auth_args()
+
+    def add_auth_args(self):
+
+        self.parser.add_argument(
+            "-u", "--user",
+            help="user for SQL authentication; if omitted, Windows authentication is used",
+            default="",
+            nargs="?"
+        )
+
+        self.parser.add_argument(
+            "-p", "--password",
+            help="password for SQL authentication",
+            default="",
+            nargs="?"
+        )
+
     def add_common_args(self):
+
         self.parser.add_argument(
             "database",
             default="",
@@ -33,11 +52,19 @@ class SQLBOFTask():
             nargs="?"
         )
 
-    def encode_common_args(self, arguments: List[str]) -> List[Tuple[BOFArgumentEncoding, str]]:
+    def encode_auth_args(self, arguments: List[str]) -> List[Tuple[BOFArgumentEncoding, str]]:
         parser_arguments = self.parser.parse_args(arguments)
 
         return [
             (BOFArgumentEncoding.STR, parser_arguments.server),
+            (BOFArgumentEncoding.STR, parser_arguments.user),
+            (BOFArgumentEncoding.STR, parser_arguments.password),
+        ]
+
+    def encode_common_args(self, arguments: List[str]) -> List[Tuple[BOFArgumentEncoding, str]]:
+        parser_arguments = self.parser.parse_args(arguments)
+
+        return self.encode_auth_args(arguments) + [
             (BOFArgumentEncoding.STR, parser_arguments.database),
             (BOFArgumentEncoding.STR, parser_arguments.linkedserver),
             (BOFArgumentEncoding.STR, parser_arguments.impersonate),
@@ -212,9 +239,8 @@ class SQLColumnsBOF(SQLBOFTask, BaseBOFTask):
     def _encode_arguments_bof(self, arguments: List[str]) -> List[Tuple[BOFArgumentEncoding, str]]:
         parser_arguments = self.parser.parse_args(arguments)
 
-        # cannot use helper function, because table is passed in middle of other arguments
-        return [
-            (BOFArgumentEncoding.STR, parser_arguments.server),
+        # cannot use encode_common_args helper function, because table is passed in middle of other arguments
+        return self.encode_auth_args(arguments) + [
             (BOFArgumentEncoding.STR, parser_arguments.database),
             (BOFArgumentEncoding.STR, parser_arguments.table),
             (BOFArgumentEncoding.STR, parser_arguments.linkedserver),
@@ -382,8 +408,7 @@ class SQLImperonsate(SQLBOFTask, BaseBOFTask):
     def _encode_arguments_bof(self, arguments: List[str]) -> List[Tuple[BOFArgumentEncoding, str]]:
         parser_arguments = self.parser.parse_args(arguments)
 
-        return [
-            (BOFArgumentEncoding.STR, parser_arguments.server),
+        return self.encode_auth_args(arguments) + [
             (BOFArgumentEncoding.STR, parser_arguments.database),
         ]
 
@@ -403,8 +428,7 @@ class SQLInfoBOF(SQLBOFTask, BaseBOFTask):
     def _encode_arguments_bof(self, arguments: List[str]) -> List[Tuple[BOFArgumentEncoding, str]]:
         parser_arguments = self.parser.parse_args(arguments)
 
-        return [
-            (BOFArgumentEncoding.STR, parser_arguments.server),
+        return self.encode_auth_args(arguments) + [
             (BOFArgumentEncoding.STR, parser_arguments.database),
         ]
 
@@ -475,9 +499,8 @@ class SQLRowsBOF(SQLBOFTask, BaseBOFTask):
     def _encode_arguments_bof(self, arguments: List[str]) -> List[Tuple[BOFArgumentEncoding, str]]:
         parser_arguments = self.parser.parse_args(arguments)
 
-        # cannot use helper function, because table is passed in middle of other arguments
-        return [
-            (BOFArgumentEncoding.STR, parser_arguments.server),
+        # cannot use encode_common_args helper function, because table is passed in middle of other arguments
+        return self.encode_auth_args(arguments) + [
             (BOFArgumentEncoding.STR, parser_arguments.database),
             (BOFArgumentEncoding.STR, parser_arguments.table),
             (BOFArgumentEncoding.STR, parser_arguments.linkedserver),
