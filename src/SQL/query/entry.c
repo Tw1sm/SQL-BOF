@@ -3,7 +3,7 @@
 #include "sql.c"
 
 
-void CustomQuery(char* server, char* database, char* link, char* impersonate, char* query)
+void CustomQuery(char* server, char* user, char* password, char* database, char* link, char* impersonate, char* query)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
@@ -13,11 +13,11 @@ void CustomQuery(char* server, char* database, char* link, char* impersonate, ch
 
     if (link == NULL)
 	{
-		dbc = ConnectToSqlServer(&env, server, database);
+		dbc = ConnectToSqlServer(&env, server, user, password, database);
 	}
 	else
 	{
-		dbc = ConnectToSqlServer(&env, server, NULL);
+		dbc = ConnectToSqlServer(&env, server, user, password, NULL);
 	}
 
     if (dbc == NULL) {
@@ -65,6 +65,8 @@ VOID go(
 ) 
 {
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* link;
 	char* impersonate;
@@ -77,12 +79,16 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 	
 	server	 	= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
 	query 		= BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 	link = *link  == 0 ? NULL : link;
 	impersonate = *impersonate == 0 ?  NULL : impersonate;
@@ -102,7 +108,7 @@ VOID go(
 		return;
 	}
 	
-	CustomQuery(server, database, link, impersonate, query);
+	CustomQuery(server, user, password, database, link, impersonate, query);
 
 	printoutput(TRUE);
 };
@@ -112,13 +118,13 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	CustomQuery("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "SELECT name, database_id FROM sys.databases;");
+	CustomQuery("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL, "SELECT name, database_id FROM sys.databases;");
 
 	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
-	CustomQuery("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "SELECT name, database_id FROM sys.databases;");
+	CustomQuery("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa", "SELECT name, database_id FROM sys.databases;");
 
 	internal_printf("\n\n============ LINK TEST ============\n\n");
-	CustomQuery("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "SELECT name, database_id FROM sys.databases;");
+	CustomQuery("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL, "SELECT name, database_id FROM sys.databases;");
 }
 
 #endif

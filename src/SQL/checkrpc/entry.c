@@ -3,7 +3,7 @@
 #include "sql.c"
 
 
-void CheckRpc(char* server, char* database, char* link, char* impersonate)
+void CheckRpc(char* server, char* user, char* password, char* database, char* link, char* impersonate)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
@@ -13,11 +13,11 @@ void CheckRpc(char* server, char* database, char* link, char* impersonate)
 
     if (link == NULL)
 	{
-		dbc = ConnectToSqlServer(&env, server, database);
+		dbc = ConnectToSqlServer(&env, server, user, password, database);
 	}
 	else
 	{
-		dbc = ConnectToSqlServer(&env, server, NULL);
+		dbc = ConnectToSqlServer(&env, server, user, password, NULL);
 	}
 
     if (dbc == NULL) {
@@ -65,6 +65,8 @@ VOID go(
 ) 
 {
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* link;
 	char* impersonate;
@@ -76,12 +78,16 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 	
 	server	 	= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
 	database = *database == 0 ? "master" : database;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	link = *link  == 0 ? NULL : link;
 	impersonate = *impersonate == 0 ?  NULL : impersonate;
 
@@ -95,7 +101,7 @@ VOID go(
 		return;
 	}
 	
-	CheckRpc(server, database, link, impersonate);
+	CheckRpc(server, user, password, database, link, impersonate);
 
 	printoutput(TRUE);
 };
@@ -105,13 +111,13 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	CheckRpc("castelblack.north.sevenkingdoms.local", "master", NULL, NULL);
+	CheckRpc("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL);
 
 	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
-	CheckRpc("castelblack.north.sevenkingdoms.local", "master", NULL, "sa");
+	CheckRpc("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa");
 
 	internal_printf("\n\n============ LINK TEST ============\n\n");
-	CheckRpc("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL);
+	CheckRpc("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL);
 }
 
 #endif

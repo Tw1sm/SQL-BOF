@@ -3,14 +3,14 @@
 #include "sql.c"
 
 
-void CheckImpersonate(char* server, char* database)
+void CheckImpersonate(char* server, char* user, char* password, char* database)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
 	SQLRETURN ret;
 
 
-    SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
+    SQLHDBC dbc = ConnectToSqlServer(&env, server, user, password, database);
 
     if (dbc == NULL) 
 	{
@@ -53,6 +53,8 @@ VOID go(
 ) 
 {
 	char* server 	= NULL;
+	char* user	= NULL;
+	char* password	= NULL;
 	char* database 	= NULL;
 
 	//
@@ -62,9 +64,13 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 
 	server 		= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 
 	if(!bofstart())
@@ -72,7 +78,7 @@ VOID go(
 		return;
 	}
 	
-	CheckImpersonate(server, database);
+	CheckImpersonate(server, user, password, database);
 
 	printoutput(TRUE);
 };
@@ -82,7 +88,7 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	CheckImpersonate("castelblack.north.sevenkingdoms.local", "master");
+	CheckImpersonate("castelblack.north.sevenkingdoms.local", NULL, NULL, "master");
 }
 
 #endif

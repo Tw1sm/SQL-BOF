@@ -3,7 +3,7 @@
 #include "sql.c"
 
 
-void CheckLinks(char* server, char* database, char* link, char* impersonate)
+void CheckLinks(char* server, char* user, char* password, char* database, char* link, char* impersonate)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
@@ -12,11 +12,11 @@ void CheckLinks(char* server, char* database, char* link, char* impersonate)
 
     if (link == NULL)
 	{
-		dbc = ConnectToSqlServer(&env, server, database);
+		dbc = ConnectToSqlServer(&env, server, user, password, database);
 	}
 	else
 	{
-		dbc = ConnectToSqlServer(&env, server, NULL);
+		dbc = ConnectToSqlServer(&env, server, user, password, NULL);
 	}
 
     if (dbc == NULL) {
@@ -60,6 +60,8 @@ VOID go(
 ) 
 {
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* link;
 	char* impersonate;
@@ -71,11 +73,15 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 	
 	server	 	= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 	link = *link  == 0 ? NULL : link;
 	impersonate = *impersonate == 0 ?  NULL : impersonate;
@@ -90,7 +96,7 @@ VOID go(
 		return;
 	}
 	
-	CheckLinks(server, database, link, impersonate);
+	CheckLinks(server, user, password, database, link, impersonate);
 
 	printoutput(TRUE);
 };
@@ -100,13 +106,13 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	CheckLinks("castelblack.north.sevenkingdoms.local", "master", NULL, NULL);
+	CheckLinks("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL);
 
 	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
-	CheckLinks("castelblack.north.sevenkingdoms.local", "master", NULL, "sa");
+	CheckLinks("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa");
 
 	internal_printf("\n\n============ LINK TEST ============\n\n");
-	CheckLinks("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL);
+	CheckLinks("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL);
 }
 
 #endif

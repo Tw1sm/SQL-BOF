@@ -21,7 +21,7 @@ void PrintMemberStatus(char* roleName, char* status)
 	}
 }
 
-void Whoami(char* server, char* database, char* link, char* impersonate)
+void Whoami(char* server, char* user, char* password, char* database, char* link, char* impersonate)
 {
     SQLHENV env			= NULL;
     SQLHSTMT stmt 		= NULL;
@@ -47,11 +47,11 @@ void Whoami(char* server, char* database, char* link, char* impersonate)
 
     if (link == NULL)
 	{
-		dbc = ConnectToSqlServer(&env, server, database);
+		dbc = ConnectToSqlServer(&env, server, user, password, database);
 	}
 	else
 	{
-		dbc = ConnectToSqlServer(&env, server, NULL);
+		dbc = ConnectToSqlServer(&env, server, user, password, NULL);
 	}
 
     if (dbc == NULL)
@@ -196,10 +196,9 @@ VOID go(
 	IN ULONG Length 
 ) 
 {
-	//
-	// usage: whoami <server> <database> <link> <impersonate>
-	//
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* link;
 	char* impersonate;
@@ -211,11 +210,15 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 
 	server 		= BeaconDataExtract(&parser, NULL);
+	user 		= BeaconDataExtract(&parser, NULL);
+	password 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
 	
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 	link = *link  == 0 ? NULL : link;
 	impersonate = *impersonate == 0 ?  NULL : impersonate;
@@ -230,7 +233,7 @@ VOID go(
 		return;
 	}
 
-	Whoami(server, database, link, impersonate);
+	Whoami(server, user, password, database, link, impersonate);
 
 	printoutput(TRUE);
 };
@@ -240,13 +243,13 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	Whoami("castelblack.north.sevenkingdoms.local", "master", NULL, NULL);
+	Whoami("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL);
 
 	internal_printf("\n============ IMPERSONATE TEST ============\n\n");
-	Whoami("castelblack.north.sevenkingdoms.local", "master", NULL, "sa");
+	Whoami("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa");
 
 	internal_printf("\n============ LINK TEST ====\n\n");
-	Whoami("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL);
+	Whoami("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL);
 }
 
 #endif

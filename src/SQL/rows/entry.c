@@ -3,7 +3,7 @@
 #include "sql.c"
 
 
-void CheckTableRows(char* server, char* database, char* link, char* impersonate, char* table)
+void CheckTableRows(char* server, char* user, char* password, char* database, char* link, char* impersonate, char* table)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
@@ -16,11 +16,11 @@ void CheckTableRows(char* server, char* database, char* link, char* impersonate,
 
     if (link == NULL)
 	{
-		dbc = ConnectToSqlServer(&env, server, database);
+		dbc = ConnectToSqlServer(&env, server, user, password, database);
 	}
 	else
 	{
-		dbc = ConnectToSqlServer(&env, server, NULL);
+		dbc = ConnectToSqlServer(&env, server, user, password, NULL);
 	}
 
     if (dbc == NULL) {
@@ -156,6 +156,8 @@ VOID go(
 ) 
 {
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* table;
 	char* link;
@@ -168,6 +170,8 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 	
 	server	 	= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	table 		= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
@@ -175,6 +179,8 @@ VOID go(
 
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 	table = *table == 0 ? NULL : table;
 	link = *link  == 0 ? NULL : link;
@@ -197,7 +203,7 @@ VOID go(
 		return;
 	}
 	
-	CheckTableRows(server, database, link, impersonate, table);
+	CheckTableRows(server, user, password, database, link, impersonate, table);
 
 	printoutput(TRUE);
 };
@@ -207,13 +213,13 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	CheckTableRows("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "spt_monitor");
+	CheckTableRows("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL, "spt_monitor");
 
 	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
-	CheckTableRows("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "spt_monitor");
+	CheckTableRows("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa", "spt_monitor");
 
 	internal_printf("\n\n============ LINK TEST ============\n\n");
-	CheckTableRows("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "spt_monitor");
+	CheckTableRows("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL, "spt_monitor");
 }
 
 #endif

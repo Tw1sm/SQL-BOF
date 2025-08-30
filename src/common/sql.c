@@ -401,10 +401,11 @@ BOOL PrintQueryResults(SQLHSTMT stmt, BOOL hasHeader)
 //
 // connects to a SQL server
 //
-SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
+SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* user, char* password, char* dbName)
 {
     SQLRETURN ret;
     SQLCHAR connstr[1024];
+    size_t totalSize = sizeof(connstr);
     SQLHDBC dbc = NULL;
 
     //
@@ -437,18 +438,29 @@ SQLHDBC ConnectToSqlServer(SQLHENV* env, char* server, char* dbName)
         return NULL;
     }
     
+    MSVCRT$_snprintf((char*)connstr, totalSize - 1, "DRIVER={SQL Server};SERVER=%s;", server);
+
     //
     // dbName may be NULL when a linked server is used
     //
-    if (dbName == NULL)
+    if (dbName != NULL)
     {
-        MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;Trusted_Connection=Yes;", server);
+        size_t len = MSVCRT$strlen(connstr);
+        MSVCRT$_snprintf((char*)connstr + len, totalSize - len - 1, "DATABASE=%s;", dbName);
+    }
+
+    //
+    // if no user was specified, use Windows authentication
+    //
+    if (user == NULL)
+    {
+        MSVCRT$strncat((char*)connstr, "Trusted_Connection=Yes;", totalSize - MSVCRT$strlen(connstr) - 1);
     }
     else
     {
-        MSVCRT$sprintf((char*)connstr, "DRIVER={SQL Server};SERVER=%s;DATABASE=%s;Trusted_Connection=Yes;", server, dbName);
+        size_t len = MSVCRT$strlen(connstr);
+        MSVCRT$_snprintf((char*)connstr + len, totalSize - len - 1, "UID=%s;PWD=%s;", user, password ? password : "");
     }
-    
 
     //
     // connect to the sql server

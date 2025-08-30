@@ -57,6 +57,7 @@ DECLSPEC_IMPORT char * __cdecl MSVCRT$strncat(char * __restrict__ _Dest,const ch
 DECLSPEC_IMPORT char * __cdecl MSVCRT$strncpy(char * __restrict__ _Dest,const char * __restrict__ _Source,size_t _Count);
 WINBASEAPI time_t __cdecl MSVCRT$time(time_t *_Time);
 WINBASEAPI int __cdecl MSVCRT$vsnprintf(char * __restrict__ d,size_t n,const char * __restrict__ format,va_list arg);
+WINBASEAPI int __cdecl MSVCRT$_snprintf(char * __restrict__ d,size_t n,const char * __restrict__ format, ...);
 DECLSPEC_IMPORT char * __cdecl MSVCRT$strcpy(char * __restrict__ __dst, const char * __restrict__ __src);
 
 #define intZeroMemory(addr,size) MSVCRT$memset((addr),0,size)
@@ -122,6 +123,7 @@ WINBASEAPI int STDCALL WS2_32$WSAStartup(WORD wVersionRequested, LPWSADATA lpWSA
 #define MSVCRT$strncpy strncpy
 #define MSVCRT$time time
 #define MSVCRT$vsnprintf vsnprintf
+#define MSVCRT$_snprintf _snprintf
 #define MSVCRT$strcpy strcpy
 
 // ODBC32
