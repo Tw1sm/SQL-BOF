@@ -8,6 +8,9 @@ Load the aggressor script located at `SQL/SQL.cna`
 #### Havoc
 Load the python script located at `SQL/SQL.py`
 
+#### Adaptix
+Load the ax script located at `SQL/SQL.axs`
+
 ## Available commands
 |Commands|Usage|Notes|
 |--------|-----|-----|
