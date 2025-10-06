@@ -668,7 +668,7 @@ cmd_sql_xpcmd.setPreHook(function (id, cmdline, parsed_json, ...parsed_lines) {
 });
 
 
-var group_test = ax.create_commands_group("SQL-BOF", [
+var group_sql = ax.create_commands_group("SQL-BOF", [
     cmd_sql_1434udp,
     cmd_sql_adsi,
     cmd_sql_agentcmd,
@@ -698,4 +698,4 @@ var group_test = ax.create_commands_group("SQL-BOF", [
     cmd_sql_whoami,
     cmd_sql_xpcmd
 ]);
-ax.register_commands_group(group_test, ["beacon", "gopher"], ["windows"], []);
+ax.register_commands_group(group_sql, ["beacon", "gopher"], ["windows"], []);
