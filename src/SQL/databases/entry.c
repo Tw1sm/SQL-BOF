@@ -46,7 +46,7 @@ void CheckDatabases(char* server, char* database, char* link, char* impersonate)
 	//
 	// Run the query
 	//
-	SQLCHAR* query = (SQLCHAR*)"SELECT dbid, name, crdate, filename FROM master.dbo.sysdatabases;";
+	SQLCHAR* query = (SQLCHAR*)"SELECT dbid, name, SUSER_SNAME(sid) AS db_owner, crdate, filename FROM master.dbo.sysdatabases;";
 	if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE)){
 		goto END;
 	}
