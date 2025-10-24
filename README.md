@@ -11,6 +11,9 @@ Load the python script located at `SQL/SQL.py`
 #### Adaptix
 Load the ax script located at `SQL/SQL.axs`
 
+#### Outflank C2
+Load the python script located at `SQL/sql_bof.s1.py`
+
 ## Available commands
 |Commands|Usage|Notes|
 |--------|-----|-----|
