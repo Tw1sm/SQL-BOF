@@ -2,17 +2,10 @@
 A library of beacon object files to interact with remote SQL servers and data. This collection is templated off the TrustedSec [CS-Situational-Awareness-BOF](https://github.com/trustedsec/CS-Situational-Awareness-BOF) collection and models the functionality of the [SQLRecon](https://github.com/skahwah/SQLRecon) project.
 
 ## Usage
-#### Cobalt Strike
-Load the aggressor script located at `SQL/SQL.cna`
-
-#### Havoc
-Load the python script located at `SQL/SQL.py`
-
-#### Adaptix
-Load the ax script located at `SQL/SQL.axs`
-
-#### Outflank C2
-Load the python script located at `SQL/sql_bof.s1.py`
+- Cobalt Strike: Load the aggressor script located at `SQL/SQL.cna`
+- Havoc: Load the python script located at `SQL/SQL.py`
+- Adaptix: Load the ax script located at `SQL/SQL.axs`
+- Outflank C2: Load the python script located at `SQL/sql_bof.s1.py`
 
 ## Available commands
 |Commands|Usage|Notes|
