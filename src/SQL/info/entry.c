@@ -58,14 +58,14 @@ void FreeSqlInfo(SQLINFO* info) {
 }
 
 
-void GetSQLInfo(char* server, char* database) {
+void GetSQLInfo(char* server, char* user, char* password, char* database) {
 	SQLHENV env		= NULL;
 	SQLHSTMT stmt 	= NULL;
 	SQLRETURN ret;
 	SQLINFO info;
 	memset(&info, 0, sizeof(SQLINFO));
 	
-	SQLHDBC dbc = ConnectToSqlServer(&env, server, database);
+	SQLHDBC dbc = ConnectToSqlServer(&env, server, user, password, database);
 
 	if (dbc == NULL)
 	{
@@ -409,6 +409,8 @@ VOID go(
 ) 
 {
 	char* server 	= NULL;
+	char* user 	= NULL;
+	char* password	= NULL;
 	char* database 	= NULL;
 
 	//
@@ -417,9 +419,13 @@ VOID go(
 	datap parser;
 	BeaconDataParse(&parser, Buffer, Length);
 	server = BeaconDataExtract(&parser, NULL);
+	user = BeaconDataExtract(&parser, NULL);
+	password = BeaconDataExtract(&parser, NULL);
 	database = BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 
 	if(!bofstart())
@@ -427,7 +433,7 @@ VOID go(
 		return;
 	}
 	
-	GetSQLInfo(server, database);
+	GetSQLInfo(server, user, password, database);
 
 	printoutput(TRUE);
 };
@@ -437,7 +443,7 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	GetSQLInfo("castelblack.north.sevenkingdoms.local", "master");
+	GetSQLInfo("castelblack.north.sevenkingdoms.local", NULL, NULL, "master");
 }
 
 #endif

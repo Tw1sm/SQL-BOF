@@ -3,7 +3,7 @@
 #include "sql.c"
 
 
-void Search(char* server, char* database, char* link, char* impersonate, char* keyword)
+void Search(char* server, char* user, char* password, char* database, char* link, char* impersonate, char* keyword)
 {
     SQLHENV env		= NULL;
     SQLHSTMT stmt 	= NULL;
@@ -14,11 +14,11 @@ void Search(char* server, char* database, char* link, char* impersonate, char* k
 
     if (link == NULL)
 	{
-		dbc = ConnectToSqlServer(&env, server, database);
+		dbc = ConnectToSqlServer(&env, server, user, password, database);
 	}
 	else
 	{
-		dbc = ConnectToSqlServer(&env, server, NULL);
+		dbc = ConnectToSqlServer(&env, server, user, password, NULL);
 	}
 
     if (dbc == NULL) {
@@ -84,6 +84,8 @@ VOID go(
 ) 
 {
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* link;
 	char* impersonate;
@@ -96,12 +98,16 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 	
 	server	 	= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password 	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
 	keyword 	= BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 	link = *link  == 0 ? NULL : link;
 	impersonate = *impersonate == 0 ?  NULL : impersonate;
@@ -116,7 +122,7 @@ VOID go(
 		return;
 	}
 	
-	Search(server, database, link, impersonate, keyword);
+	Search(server, user, password, database, link, impersonate, keyword);
 
 	printoutput(TRUE);
 };
@@ -126,13 +132,13 @@ VOID go(
 int main()
 {
 	internal_printf("============ BASE TEST ============\n\n");
-	Search("castelblack.north.sevenkingdoms.local", "master", NULL, NULL, "idle");
+	Search("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, NULL, "idle");
 
 	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
-	Search("castelblack.north.sevenkingdoms.local", "master", NULL, "sa", "idle");
+	Search("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", NULL, "sa", "idle");
 
 	internal_printf("\n\n============ LINK TEST ============\n\n");
-	Search("castelblack.north.sevenkingdoms.local", "master", "BRAAVOS", NULL, "idle");
+	Search("castelblack.north.sevenkingdoms.local", NULL, NULL, "master", "BRAAVOS", NULL, "idle");
 }
 
 #endif

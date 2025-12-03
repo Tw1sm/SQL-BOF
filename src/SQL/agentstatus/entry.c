@@ -5,7 +5,7 @@
 #include "sql_agent.c"
 
 
-void CheckAgentStatus(char* server, char* database, char* link, char* impersonate)
+void CheckAgentStatus(char* server, char* user, char* password, char* database, char* link, char* impersonate)
 {
     SQLHENV env			 = NULL;
     SQLHSTMT stmt 		 = NULL;
@@ -15,11 +15,11 @@ void CheckAgentStatus(char* server, char* database, char* link, char* impersonat
 
     if (link == NULL)
 	{
-		dbc = ConnectToSqlServer(&env, server, database);
+		dbc = ConnectToSqlServer(&env, server, user, password, database);
 	}
 	else
 	{
-		dbc = ConnectToSqlServer(&env, server, NULL);
+		dbc = ConnectToSqlServer(&env, server, user, password, NULL);
 	}
 
     if (dbc == NULL) {
@@ -82,6 +82,8 @@ VOID go(
 ) 
 {
 	char* server;
+	char* user;
+	char* password;
 	char* database;
 	char* link;
 	char* impersonate;
@@ -93,11 +95,15 @@ VOID go(
 	BeaconDataParse(&parser, Buffer, Length);
 	
 	server	 	= BeaconDataExtract(&parser, NULL);
+	user	 	= BeaconDataExtract(&parser, NULL);
+	password	= BeaconDataExtract(&parser, NULL);
 	database 	= BeaconDataExtract(&parser, NULL);
 	link 		= BeaconDataExtract(&parser, NULL);
 	impersonate = BeaconDataExtract(&parser, NULL);
 
 	server = *server == 0 ? "localhost" : server;
+	user = *user == 0 ? NULL : user;
+	password = *password == 0 ? NULL : password;
 	database = *database == 0 ? "master" : database;
 	link = *link  == 0 ? NULL : link;
 	impersonate = *impersonate == 0 ?  NULL : impersonate;
@@ -112,7 +118,7 @@ VOID go(
 		return;
 	}
 	
-	CheckAgentStatus(server, database, link, impersonate);
+	CheckAgentStatus(server, user, password, database, link, impersonate);
 
 	printoutput(TRUE);
 };
@@ -125,13 +131,13 @@ int main()
 	// GOAD uses SQLExpress so turning to makeshift lab here
 	//
 	internal_printf("============ BASE TEST ============\n\n");
-	CheckAgentStatus("192.168.0.215", "master", NULL, NULL);
+	CheckAgentStatus("192.168.0.215", NULL, NULL, "master", NULL, NULL);
 
 	internal_printf("\n\n============ IMPERSONATE TEST ============\n\n");
-	CheckAgentStatus("192.168.0.215", "master", NULL, "sa");
+	CheckAgentStatus("192.168.0.215", NULL, NULL, "master", NULL, "sa");
 
 	internal_printf("\n\n============ LINK TEST ============\n\n");
-	CheckAgentStatus("192.168.0.215", "master", "TRETOGOR", NULL);
+	CheckAgentStatus("192.168.0.215", NULL, NULL, "master", "TRETOGOR", NULL);
 }
 
 #endif
