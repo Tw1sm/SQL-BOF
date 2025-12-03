@@ -46,7 +46,9 @@ void CheckDatabases(char* server, char* database, char* link, char* impersonate)
 	//
 	// Run the query
 	//
-	SQLCHAR* query = (SQLCHAR*)"SELECT dbid, name, crdate, filename FROM master.dbo.sysdatabases;";
+	SQLCHAR* query = (SQLCHAR*)"SELECT sd.dbid, sd.name, SUSER_SNAME(sd.sid) AS db_owner, d.is_trustworthy_on, sd.crdate, sd.filename "
+		"FROM master.dbo.sysdatabases sd "
+		"LEFT JOIN sys.databases d ON sd.dbid = d.database_id;";
 	if (!HandleQuery(stmt, (SQLCHAR*)query, link, impersonate, FALSE)){
 		goto END;
 	}
